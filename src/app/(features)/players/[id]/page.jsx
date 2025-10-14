@@ -1,12 +1,12 @@
 import Header from '@/components/Header'
-import HeroSection from '@/components/Home/HeroSection'
 import React from 'react'
+import PlayerDetails from './components/SingleView'
 
 function page() {
   return (
     <div>
-      <Header></Header>
-      <HeroSection></HeroSection>
+        <Header></Header>
+        <PlayerDetails></PlayerDetails>
     </div>
   )
 }
