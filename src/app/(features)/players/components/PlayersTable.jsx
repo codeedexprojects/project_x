@@ -1,30 +1,27 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import CreatePlayerModal from './AddPlayer';
+import { useDispatch, useSelector } from 'react-redux';
+import { getPlayersAdmin } from '@/redux/slice/playersSlice';
 
 export default function PlayersTable() {
   const [searchQID, setSearchQID] = useState('');
   const [searchName, setSearchName] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+const dispatch = useDispatch();
+  const { players, loading, error } = useSelector((state) => state.playerSlice);
 
-  const players = [
-    { qid: '31535604340', name: 'Aadhira Satheesh Kumar' },
-    { qid: '31935602525', name: 'Aadhrit' },
-    { qid: '31735601837', name: 'Aadidev Aji' },
-    { qid: '31535607403', name: 'Aadya Katragadda' },
-    { qid: '31535604341', name: 'Aarav Sharma' },
-    { qid: '31935602526', name: 'Abhishek Kumar' },
-    { qid: '31735601838', name: 'Aditya Singh' },
-    { qid: '31535607404', name: 'Ananya Reddy' }
-  ];
 
-  const filteredPlayers = players.filter(player => {
-    const matchesQID = player.qid.toLowerCase().includes(searchQID.toLowerCase());
-    const matchesName = player.name.toLowerCase().includes(searchName.toLowerCase());
+  useEffect(() => {
+    dispatch(getPlayersAdmin());
+  }, [dispatch]);
+
+  const filteredPlayers = players.filter((player) => {
+    const matchesQID = player.qid?.toLowerCase().includes(searchQID.toLowerCase());
+    const matchesName = player.name?.toLowerCase().includes(searchName.toLowerCase());
     return matchesQID && matchesName;
   });
-
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6">
@@ -32,7 +29,7 @@ export default function PlayersTable() {
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-100">Players</h1>
-            <button 
+            <button
               onClick={() => setIsModalOpen(true)}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
             >
@@ -77,33 +74,35 @@ export default function PlayersTable() {
             </div>
 
             {/* Table Body */}
-            <div className="divide-y divide-zinc-700/50">
-              {filteredPlayers.length > 0 ? (
-                filteredPlayers.map((player, index) => (
+            {loading ? (
+              <div className="px-6 py-12 text-center text-gray-500">Loading players...</div>
+            ) : error ? (
+              <div className="px-6 py-12 text-center text-red-500">{error}</div>
+            ) : filteredPlayers.length > 0 ? (
+              <div className="divide-y divide-zinc-700/50">
+                {filteredPlayers.map((player) => (
                   <div
-                    key={index}
+                    key={player._id}
                     className="grid grid-cols-2 hover:bg-zinc-700/30 transition-colors duration-200 cursor-pointer"
                   >
-                    <div className="px-6 py-4 text-gray-300 font-mono text-sm">
-                      {player.qid}
-                    </div>
-                    <div className="px-6 py-4 text-gray-200 font-medium">
-                      {player.name}
-                    </div>
+                    <div className="px-6 py-4 text-gray-300 font-mono text-sm">{player.qid}</div>
+                    <div className="px-6 py-4 text-gray-200 font-medium">{player.name}</div>
                   </div>
-                ))
-              ) : (
-                <div className="px-6 py-12 text-center text-gray-500">
-                  No players found matching your search criteria
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-6 py-12 text-center text-gray-500">
+                No players found matching your search criteria
+              </div>
+            )}
           </div>
 
           {/* Results Count */}
-          <div className="mt-4 text-gray-400 text-sm">
-            Showing {filteredPlayers.length} of {players.length} players
-          </div>
+          {!loading && (
+            <div className="mt-4 text-gray-400 text-sm">
+              Showing {filteredPlayers.length} of {players.length} players
+            </div>
+          )}
         </div>
       </div>
 
