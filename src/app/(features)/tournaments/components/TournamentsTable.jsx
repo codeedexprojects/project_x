@@ -1,10 +1,24 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, Eye, Calendar, Users, Trophy } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Calendar,
+  Users,
+  Trophy,
+  PencilIcon,
+} from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
+import {
+  deleteTournament,
+  getTournamentsAdmin,
+} from "@/redux/slice/tournamentSlice";
 import CreateTournamentModal from "./CreateTournamentModal";
+import DeleteModal from "./DeleteModal";
+import EditModal from "./EditModal";
 
 export default function TournamentsTable() {
   const dispatch = useDispatch();
@@ -14,6 +28,9 @@ export default function TournamentsTable() {
   );
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     dispatch(getTournamentsAdmin());
@@ -28,10 +45,7 @@ export default function TournamentsTable() {
   };
 
   const handleFormSubmit = (formData) => {
-    // Handle form submission here
     console.log("Form data:", formData);
-    // You can dispatch createTournament action here
-    // dispatch(createTournament(formData));
     setIsCreateModalOpen(false);
   };
 
@@ -39,32 +53,46 @@ export default function TournamentsTable() {
     router.push(`/tournaments/${tournamentId}`);
   };
 
-  const handleEditTournament = (tournamentId, e) => {
-    e.stopPropagation();
-    router.push(`/tournaments/${tournamentId}`);
-  };
+const handleEditTournament = (tournamentId, e) => {
+  e.stopPropagation();
+  const tournament = tournaments.find((t) => t._id === tournamentId);
+  setSelectedTournament(tournament);
+  setIsEditModalOpen(true);
+};
+
+const cancelEdit = () => {
+  setIsEditModalOpen(false);
+  setSelectedTournament(null);
+};
 
   const handleDeleteTournament = (tournamentId, e) => {
     e.stopPropagation();
-    setSelectedTournament(tournamentId);
-    // Add your delete confirmation logic here
-    console.log("Delete tournament:", tournamentId);
+    const tournament = tournaments.find((t) => t._id === tournamentId);
+    setSelectedTournament(tournament);
+    setIsDeleteModalOpen(true);
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "upcoming":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-      case "completed":
-        return "bg-purple-500/20 text-purple-400 border-purple-500/30";
-      case "cancelled":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  const confirmDelete = async () => {
+    if (selectedTournament) {
+      setDeletingId(selectedTournament._id);
+      try {
+        await dispatch(deleteTournament(selectedTournament._id)).unwrap();
+        setIsDeleteModalOpen(false);
+        setSelectedTournament(null);
+      } catch (error) {
+        console.error("Failed to delete tournament:", error);
+      } finally {
+        setDeletingId(null);
+      }
     }
   };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedTournament(null);
+  };
+
+
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -128,7 +156,9 @@ export default function TournamentsTable() {
               </div>
               <div>
                 <p className="text-gray-400 text-sm">Total Tournaments</p>
-                <p className="text-white text-xl font-bold">{tournaments.length}</p>
+                <p className="text-white text-xl font-bold">
+                  {tournaments.length}
+                </p>
               </div>
             </div>
           </div>
@@ -140,7 +170,11 @@ export default function TournamentsTable() {
               <div>
                 <p className="text-gray-400 text-sm">Active</p>
                 <p className="text-white text-xl font-bold">
-                  {tournaments.filter(t => isActive(t.start_date, t.end_date)).length}
+                  {
+                    tournaments.filter((t) =>
+                      isActive(t.start_date, t.end_date)
+                    ).length
+                  }
                 </p>
               </div>
             </div>
@@ -157,9 +191,7 @@ export default function TournamentsTable() {
             <div className="col-span-3 lg:col-span-2 py-4 text-left text-xs sm:text-sm font-semibold text-gray-300 uppercase tracking-wider hidden sm:block">
               Dates
             </div>
-            <div className="col-span-3 lg:col-span-2 py-4 text-left text-xs sm:text-sm font-semibold text-gray-300 uppercase tracking-wider">
-              Status
-            </div>
+         
             <div className="col-span-3 lg:col-span-4 py-4 text-center text-xs sm:text-sm font-semibold text-gray-300 uppercase tracking-wider">
               Actions
             </div>
@@ -203,7 +235,6 @@ export default function TournamentsTable() {
                         <p className="text-gray-400 text-xs sm:text-sm mt-1">
                           {tournament.location || "Location not specified"}
                         </p>
-                        
                       </div>
                     </div>
                   </div>
@@ -222,17 +253,6 @@ export default function TournamentsTable() {
                     </div>
                   </div>
 
-                  {/* Status */}
-                  <div className="col-span-3 lg:col-span-2 py-4">
-                    <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                        tournament.status
-                      )}`}
-                    >
-                      {tournament.status || "Unknown"}
-                    </span>
-                  </div>
-
                   {/* Actions */}
                   <div className="col-span-3 lg:col-span-4 py-4">
                     <div className="flex justify-center items-center gap-2">
@@ -244,21 +264,37 @@ export default function TournamentsTable() {
                       >
                         <Eye size={16} />
                       </button>
+
                       <button
-                        onClick={(e) => handleEditTournament(tournament._id, e)}
-                        className="p-2 rounded-lg bg-zinc-700/50 hover:bg-green-500/30 text-gray-400 hover:text-green-300 transition-all duration-200 transform hover:scale-110 group/btn"
-                        aria-label="Edit"
-                        title="Edit Tournament"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteTournament(tournament._id, e)}
-                        className="p-2 rounded-lg bg-zinc-700/50 hover:bg-red-500/30 text-gray-400 hover:text-red-300 transition-all duration-200 transform hover:scale-110 group/btn"
+                        onClick={(e) =>
+                          handleDeleteTournament(tournament._id, e)
+                        }
+                        disabled={deletingId === tournament._id}
+                        className="p-2 rounded-lg bg-zinc-700/50 hover:bg-red-500/30 text-gray-400 hover:text-red-300 transition-all duration-200 transform hover:scale-110 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="Delete"
                         title="Delete Tournament"
                       >
-                        <Trash2 size={16} />
+                        {deletingId === tournament._id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </button>
+
+                      <button
+                        onClick={(e) =>
+                          handleEditTournament(tournament._id, e)
+                        }
+                        disabled={deletingId === tournament._id}
+                        className="p-2 rounded-lg bg-zinc-700/50 hover:bg-red-500/30 text-gray-400 hover:text-red-300 transition-all duration-200 transform hover:scale-110 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="Delete"
+                        title="Delete Tournament"
+                      >
+                        {deletingId === tournament._id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                        ) : (
+                          <PencilIcon size={16} />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -268,15 +304,21 @@ export default function TournamentsTable() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Start:</span>
-                        <span className="text-gray-300">{formatDate(tournament.start_date)}</span>
+                        <span className="text-gray-300">
+                          {formatDate(tournament.start_date)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">End:</span>
-                        <span className="text-gray-300">{formatDate(tournament.end_date)}</span>
+                        <span className="text-gray-300">
+                          {formatDate(tournament.end_date)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Location:</span>
-                        <span className="text-gray-300">{tournament.location || "N/A"}</span>
+                        <span className="text-gray-300">
+                          {tournament.location || "N/A"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -307,7 +349,11 @@ export default function TournamentsTable() {
         {!loading && tournaments.length > 0 && (
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-gray-400 text-sm">
             <div>
-              Showing <span className="text-white font-medium">{tournaments.length}</span> tournaments
+              Showing{" "}
+              <span className="text-white font-medium">
+                {tournaments.length}
+              </span>{" "}
+              tournaments
             </div>
             <div className="flex items-center gap-4">
               <button className="hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -325,6 +371,19 @@ export default function TournamentsTable() {
           isOpen={isCreateModalOpen}
           onClose={handleCloseCreateModal}
           onSubmit={handleFormSubmit}
+        />
+
+        <DeleteModal
+          isOpen={isDeleteModalOpen}
+          onClose={cancelDelete}
+          onConfirm={confirmDelete}
+          tournament={selectedTournament}
+          isDeleting={deletingId === selectedTournament?._id}
+        />
+
+        <EditModal
+        isOpen={isEditModalOpen}
+        onClose={cancelEdit}
         />
       </div>
     </div>

@@ -55,7 +55,7 @@ export const createTournament = createAsyncThunk(
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data", // Important for file uploads
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -68,25 +68,68 @@ export const createTournament = createAsyncThunk(
   }
 );
 
+// delete tournament
+export const deleteTournament = createAsyncThunk(
+  "tournaments/deleteTournament",
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.delete(
+        `${BASE_URL}/admin/tournament/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete tournament"
+      );
+    }
+  }
+);
+
+// edittournament
+export const editTournament = createAsyncThunk(
+  "tournaments/editTournament",
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.patch(`${BASE_URL}/admin/tournament/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to edit tournament"
+      );
+    }
+  }
+);
+
 // ✅ Slice
 const tournamentsSlice = createSlice({
   name: "tournaments",
   initialState: {
     tournaments: [],
-    singleTournament: null, // 👈 For /id data
+    singleTournament: null,
     loading: false,
     error: null,
-    createLoading: false, // 👈 Separate loading state for create operation
-    createError: null, // 👈 Separate error state for create operation
+    createLoading: false,
+    createError: null,
   },
 
   reducers: {
-    // 👈 Optional: Add reducer to clear errors
     clearError: (state) => {
       state.error = null;
       state.createError = null;
     },
-    // 👈 Optional: Add reducer to clear single tournament data
     clearSingleTournament: (state) => {
       state.singleTournament = null;
     },
@@ -94,7 +137,6 @@ const tournamentsSlice = createSlice({
 
   extraReducers: (builder) => {
     builder
-      // 🔹 Get all tournaments
       .addCase(getTournamentsAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -129,7 +171,6 @@ const tournamentsSlice = createSlice({
       })
       .addCase(createTournament.fulfilled, (state, action) => {
         state.createLoading = false;
-        // Optionally add the new tournament to the tournaments list
         if (action.payload?.data) {
           state.tournaments.unshift(action.payload.data);
         }
@@ -137,6 +178,44 @@ const tournamentsSlice = createSlice({
       .addCase(createTournament.rejected, (state, action) => {
         state.createLoading = false;
         state.createError = action.payload;
+      })
+
+      // deletetournament
+      .addCase(deleteTournament.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteTournament.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tournaments = state.tournaments.filter(
+          (tournament) =>
+            tournament.id !== action.meta.arg ||
+            tournament._id !== action.meta.arg
+        );
+        state.success = "Tournament deleted successfully";
+      })
+      .addCase(deleteTournament.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // edit modal
+      .addCase(editTournament.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(editTournament.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tournaments = state.tournaments.filter(
+          (tournament) =>
+            tournament.id !== action.meta.arg ||
+            tournament._id !== action.meta.arg
+        );
+        state.success = "Tournament edited successfully";
+      })
+      .addCase(editTournament.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

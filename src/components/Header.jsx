@@ -16,7 +16,9 @@ export default function Header() {
     { name: "Tournaments", path: "/tournaments" },
     { name: "Clubs", path: "/clubs" },
     { name: "Rankings", path: "/rankings" },
+    { name: "Categories", path: "/categorylist" },
     { name: "Exports", path: "/exports" },
+    { name: "Login", path: "/login" },
   ];
 
   const handleNavigate = (path) => {

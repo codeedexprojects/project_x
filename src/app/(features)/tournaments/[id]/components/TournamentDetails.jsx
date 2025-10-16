@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Users, Trophy, Calendar, MapPin } from "lucide-react";
+import { ChevronDown, ChevronUp, Users, Trophy, Calendar, MapPin, PersonStanding, HandFist, ShieldHalf, Annoyed, CopyCheck, SquarePlus } from "lucide-react";
 import { getTournamentById } from "@/redux/slice/tournamentSlice";
 
 export default function TournamentDetails() {
@@ -24,6 +24,18 @@ export default function TournamentDetails() {
       [categoryId]: !prev[categoryId]
     }));
   };
+
+   const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
 
   const getCategoryIcon = (type) => {
     switch (type) {
@@ -63,7 +75,7 @@ export default function TournamentDetails() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="">
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-100 mb-4">
@@ -71,31 +83,23 @@ export default function TournamentDetails() {
           </h1>
           
           <div className="flex flex-wrap gap-6 mb-6">
-            <div className="flex items-center gap-2 text-gray-300">
-              <Calendar size={20} className="text-red-400" />
-              <span>{new Date(singleTournament?.date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}</span>
-            </div>
+          <div className="flex items-center gap-2 text-gray-300">
+  <Calendar size={20} className="text-red-400" />
+  Starts: {singleTournament?.start_date ? formatDateTime(singleTournament.start_date) : "Loading..."}
+</div>
             
             <div className="flex items-center gap-2 text-gray-300">
               <MapPin size={20} className="text-red-400" />
               <span>{singleTournament?.location}</span>
             </div>
-            
-            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(singleTournament?.status)}`}>
-              <Trophy size={16} />
-              <span className="capitalize">{singleTournament?.status}</span>
-            </div>
+       
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-red-500/20 rounded-lg">
+                <div className="p-3 rounded-lg">
                   <Trophy className="text-red-400" size={24} />
                 </div>
                 <div>
@@ -107,7 +111,7 @@ export default function TournamentDetails() {
             
             <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-500/20 rounded-lg">
+                <div className="p-3  rounded-lg">
                   <Users className="text-blue-400" size={24} />
                 </div>
                 <div>
@@ -116,10 +120,81 @@ export default function TournamentDetails() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3  rounded-lg">
+                  <SquarePlus className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.singlesCategories}</p>
+                  <p className="text-gray-400 text-sm">Single category</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3  rounded-lg">
+                  <CopyCheck className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.doublesCategories}</p>
+                  <p className="text-gray-400 text-sm">Double Category</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3  rounded-lg">
+                  <Annoyed className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalPlayerEntries}</p>
+                  <p className="text-gray-400 text-sm"> Players Entries</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3  rounded-lg">
+                  <ShieldHalf className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalTeams}</p>
+                  <p className="text-gray-400 text-sm">Total Teams</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg">
+                  <PersonStanding className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalIndividualPlayers}</p>
+                  <p className="text-gray-400 text-sm">Individual Players</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg">
+                  <HandFist className="text-blue-400" size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.uniqueUsers}</p>
+                  <p className="text-gray-400 text-sm">Unique Users</p>
+                </div>
+              </div>
+            </div>
             
             <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-500/20 rounded-lg">
+                <div className="p-3  rounded-lg">
                   <Calendar className="text-green-400" size={24} />
                 </div>
                 <div>

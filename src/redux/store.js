@@ -3,6 +3,7 @@ import adminAuthReducer from "./slice/adminAuth"
 import SliceReducer from "./slice/playersSlice"
 import tournamentReducer from "./slice/tournamentSlice"
 import clubReducer from "./slice/clubSlice"
+import categoryReducer from "./slice/categorySlice"
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
  playerSlice: SliceReducer,
  tournamentsSlice: tournamentReducer,
   clubs: clubReducer, 
+  category: categoryReducer
   },
 
   });

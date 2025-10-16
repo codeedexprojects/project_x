@@ -1,24 +1,58 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { getClubs } from "@/redux/slice/clubSlice";
+import { deleteClubs, getClubs } from "@/redux/slice/clubSlice";
+import AddClubModal from "../modals/CreateModal";
+import EditClubModal from "../modals/EditClubModal";
+import toast, { Toaster } from "react-hot-toast";
+import DeleteClubModal from "../modals/DeleteClubModal";
 
 export default function ClubsTable() {
   const dispatch = useDispatch();
   const { clubs, loading, error } = useSelector((state) => state.clubs);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedClub, setSelectedClub] = useState(null); // ✅ Add this
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   useEffect(() => {
     dispatch(getClubs());
   }, [dispatch]);
+
+  const handleEdit = (club) => {
+    setSelectedClub(club); // ✅ Set selected club data
+    setIsEditOpen(true);
+  };
+
+  const handleDelete = (club) => {
+    setSelectedClub(club);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await dispatch(deleteClubs(selectedClub._id)).unwrap();
+      toast.success(`${selectedClub.name} deleted successfully`);
+      setIsDeleteOpen(false);
+    } catch (err) {
+      toast.error(err || "Failed to delete club");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-100">Clubs</h1>
-          <button className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-100">
+            Clubs
+          </h1>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
+          >
             <Plus size={20} />
             CREATE CLUB
           </button>
@@ -39,7 +73,9 @@ export default function ClubsTable() {
           </div>
 
           {loading ? (
-            <div className="px-6 py-12 text-center text-gray-400">Loading clubs...</div>
+            <div className="px-6 py-12 text-center text-gray-400">
+              Loading clubs...
+            </div>
           ) : error ? (
             <div className="px-6 py-12 text-center text-red-400">{error}</div>
           ) : clubs.length > 0 ? (
@@ -56,10 +92,18 @@ export default function ClubsTable() {
                     {club.name}
                   </div>
                   <div className="col-span-3 px-6 py-5 flex justify-center items-center gap-3">
-                    <button className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 transition-all duration-200 transform hover:scale-110" aria-label="Edit">
+                    <button
+                      onClick={() => handleEdit(club)} // ✅ open edit modal with selected club
+                      className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 transition-all duration-200 transform hover:scale-110"
+                      aria-label="Edit"
+                    >
                       <Pencil size={18} />
                     </button>
-                    <button className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 transform hover:scale-110" aria-label="Delete">
+                    <button
+                      onClick={() => handleDelete(club)}
+                      className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 transform hover:scale-110"
+                      aria-label="Delete"
+                    >
                       <Trash2 size={18} />
                     </button>
                   </div>
@@ -67,7 +111,9 @@ export default function ClubsTable() {
               ))}
             </div>
           ) : (
-            <div className="px-6 py-12 text-center text-gray-400">No clubs found</div>
+            <div className="px-6 py-12 text-center text-gray-400">
+              No clubs found
+            </div>
           )}
         </div>
 
@@ -77,6 +123,28 @@ export default function ClubsTable() {
           </div>
         )}
       </div>
+
+      {/* Create Modal */}
+      <AddClubModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Edit Modal */}
+      <EditClubModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        existingClub={selectedClub} // ✅ pass selected club data
+      />
+
+      <DeleteClubModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        onConfirm={confirmDelete}
+        tournament={selectedClub} 
+        // isDeleting={deleting}
+      />
+      <Toaster position="top-right" />
     </div>
   );
 }
