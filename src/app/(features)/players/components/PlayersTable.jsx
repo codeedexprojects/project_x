@@ -1,34 +1,45 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react';
-import CreatePlayerModal from './AddPlayer';
-import { useDispatch, useSelector } from 'react-redux';
-import { getPlayersAdmin } from '@/redux/slice/playersSlice';
+import React, { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import CreatePlayerModal from "./AddPlayer";
+import { useDispatch, useSelector } from "react-redux";
+import { getPlayersAdmin } from "@/redux/slice/playersSlice";
+import { useRouter } from "next/navigation";
 
 export default function PlayersTable() {
-  const [searchQID, setSearchQID] = useState('');
-  const [searchName, setSearchName] = useState('');
+  const [searchQID, setSearchQID] = useState("");
+  const [searchName, setSearchName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-const dispatch = useDispatch();
-  const { players, loading, error } = useSelector((state) => state.playerSlice);
+  const dispatch = useDispatch();
+  const router = useRouter();
 
+  const { players, loading, error } = useSelector(
+    (state) => state.playerSlice
+  );
 
   useEffect(() => {
     dispatch(getPlayersAdmin());
   }, [dispatch]);
 
   const filteredPlayers = players.filter((player) => {
-    const matchesQID = player.qid?.toLowerCase().includes(searchQID.toLowerCase());
-    const matchesName = player.name?.toLowerCase().includes(searchName.toLowerCase());
+    const matchesQID = player.qid
+      ?.toLowerCase()
+      .includes(searchQID.toLowerCase());
+    const matchesName = player.name
+      ?.toLowerCase()
+      .includes(searchName.toLowerCase());
     return matchesQID && matchesName;
   });
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-100">Players</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-100">
+              Players
+            </h1>
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
@@ -75,7 +86,9 @@ const dispatch = useDispatch();
 
             {/* Table Body */}
             {loading ? (
-              <div className="px-6 py-12 text-center text-gray-500">Loading players...</div>
+              <div className="px-6 py-12 text-center text-gray-500">
+                Loading players...
+              </div>
             ) : error ? (
               <div className="px-6 py-12 text-center text-red-500">{error}</div>
             ) : filteredPlayers.length > 0 ? (
@@ -83,10 +96,15 @@ const dispatch = useDispatch();
                 {filteredPlayers.map((player) => (
                   <div
                     key={player._id}
+                    onClick={() => router.push(`/players/${player._id}`)} // 👈 navigate to /players/id
                     className="grid grid-cols-2 hover:bg-zinc-700/30 transition-colors duration-200 cursor-pointer"
                   >
-                    <div className="px-6 py-4 text-gray-300 font-mono text-sm">{player.qid}</div>
-                    <div className="px-6 py-4 text-gray-200 font-medium">{player.name}</div>
+                    <div className="px-6 py-4 text-gray-300 font-mono text-sm">
+                      {player.qid}
+                    </div>
+                    <div className="px-6 py-4 text-gray-200 font-medium">
+                      {player.name}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -107,7 +125,10 @@ const dispatch = useDispatch();
       </div>
 
       {/* Modal */}
-      <CreatePlayerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreatePlayerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </>
   );
 }
