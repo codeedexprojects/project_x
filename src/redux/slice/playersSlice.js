@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { BASE_URL } from "../baseurl";
 
-// ✅ Get all players
+//  Get all players
 export const getPlayersAdmin = createAsyncThunk(
   "adminAuth/getPlayersAdmin",
   async (_, { rejectWithValue }) => {
@@ -11,7 +11,7 @@ export const getPlayersAdmin = createAsyncThunk(
       const response = await axios.get(`${BASE_URL}/admin/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data; // Keep the whole response
+      return response.data; 
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to get players"
@@ -20,7 +20,7 @@ export const getPlayersAdmin = createAsyncThunk(
   }
 );
 
-// ✅ Get user by ID
+// Get user by ID
 export const getUserById = createAsyncThunk(
   "adminAuth/getUserById",
   async (id, { rejectWithValue }) => {
@@ -30,7 +30,7 @@ export const getUserById = createAsyncThunk(
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("Single user response:", response.data);
-      return response.data; // Keep full response
+      return response.data; 
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to get user details"
@@ -49,14 +49,13 @@ const playersSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ✅ Get all players
+      // Get all players
       .addCase(getPlayersAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getPlayersAdmin.fulfilled, (state, action) => {
         state.loading = false;
-        // Adjust based on backend structure
         state.players =
           action.payload?.data?.users ||
           action.payload?.data ||
@@ -68,14 +67,13 @@ const playersSlice = createSlice({
         state.error = action.payload;
       })
 
-      // ✅ Get single player by ID
+      //  Get single player by ID
       .addCase(getUserById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getUserById.fulfilled, (state, action) => {
         state.loading = false;
-        // Store full object so UI can access { user, summary, tournamentParticipation }
         state.singleUser =
           action.payload?.data ||
           action.payload ||

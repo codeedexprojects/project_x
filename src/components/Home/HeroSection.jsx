@@ -1,56 +1,53 @@
-import React from 'react';
-import { Users, Trophy, Building2 } from 'lucide-react';
+import React from "react";
+import { Users, Trophy, Building2, UserCheck } from "lucide-react";
 
-export default function HeroSection() {
+export default function ShuttleDeskHome() {
   const stats = [
-    { icon: Users, count: '1769', label: 'Players' },
-    { icon: Trophy, count: '40', label: 'Tournaments' },
-    { icon: Building2, count: '48', label: 'Clubs' },
+    { icon: Users, value: "54321", label: "Players" },
+    { icon: Trophy, value: "85", label: "Tournaments" },
+    { icon: Building2, value: "423", label: "Clubs" },
+    { icon: UserCheck, value: "456", label: "Umpire" },
   ];
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <main className="container mx-auto px-4 py-16">
-        {/* Logo and Title */}
-        <div className="flex flex-col items-center justify-center mb-16">
-          <div className="mb-8">
-            <img
-              src="/logo.png" 
-              alt="ShuttleDesk Logo"
-              className="w-32 h-32 md:w-40 md:h-40 object-contain"
-            />
-          </div>
-
-          <div className="text-center space-y-3">
-            <p className="text-gray-400 text-lg md:text-xl">Welcome to</p>
-            <h2 className="text-3xl md:text-4xl lg:text-6xl font-bold text-white tracking-tight">
-              ShuttleDesk BQAB
-            </h2>
-          </div>
+    <div className=" bg-black text-white flex flex-col lg:flex-row items-center justify-between px-6 lg:px-20 py-3 relative overflow-hidden">
+      {/* Left Content */}
+      <div className="z-10 max-w-lg space-y-4 text-center lg:text-left">
+        {/* Title Section */}
+        <div>
+          <p className="text-gray-300 text-lg mb-2">Welcome to</p>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
+            ShuttleDesk <span className="text-purple-400">BQAB</span>
+          </h1>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {stats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            return (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl p-8 md:p-10 hover:from-zinc-700 hover:to-zinc-800 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-900/20 cursor-pointer"
-              >
-                <div className="flex flex-col items-center space-y-4">
-                  <IconComponent
-                    className="w-14 h-14 md:w-16 md:h-16 text-red-500"
-                    strokeWidth={1.5}
-                  />
-                  <h3 className="text-5xl md:text-6xl font-bold text-white">{stat.count}</h3>
-                  <p className="text-lg md:text-xl text-gray-300 font-medium">{stat.label}</p>
-                </div>
-              </div>
-            );
-          })}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-5 sm:gap-6">
+          {stats.map((stat, index) => (
+            <div
+              key={index}
+              className="bg-gradient-to-b from-[#4b0082]/80 to-[#2e0057]/80 rounded-xl p-6 flex flex-col items-center justify-center shadow-lg hover:scale-105 transition-transform"
+            >
+              <stat.icon className="w-8 h-8 mb-3 text-white" />
+              <p className="text-3xl font-bold">{stat.value}</p>
+              <p className="text-gray-300 text-sm mt-1">{stat.label}</p>
+            </div>
+          ))}
         </div>
-      </main>
+      </div>
+
+      {/* Right Image */}
+      <div className="relative z-10 w-full lg:w-[85%] flex justify-end">
+        <img
+          src="/girlbg.png"
+          alt="Badminton Player"
+          className="w-full max-w-[950px] object-cover lg:object-contain"
+        />
+      </div>
+
+      {/* Optional Background Glow */}
+      <div className="absolute top-0 left-0 w-[300px] h-[300px] bg-purple-700/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-purple-900/30 rounded-full blur-3xl"></div>
     </div>
   );
 }

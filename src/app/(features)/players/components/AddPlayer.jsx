@@ -204,7 +204,7 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
             <button
               type="submit"
               onClick={handleSubmit}
-              className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
+              className="px-8 py-3 bg-[#1e0066] hover:bg-[#1e0066] text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-red-500/50 transform hover:scale-105"
             >
               SAVE
             </button>

@@ -357,7 +357,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
                         type="button"
                         onClick={removeFile}
                         disabled={createLoading}
-                        className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-gray-400 hover:text-[#1e0066] transition-colors p-2 rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -385,7 +385,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
               <button
                 type="submit"
                 disabled={createLoading}
-                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center text-lg"
+                className="flex-1 bg-[#1e0066] text-white font-medium py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center text-lg"
               >
                 {createLoading ? (
                   <>

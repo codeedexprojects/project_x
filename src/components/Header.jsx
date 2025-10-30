@@ -27,21 +27,22 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 shadow-lg">
+    <header className="bg-white shadow-lg">
       <nav className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <img
-              src="/logo.png"
-              alt="ShuttleDesk Logo"
-              className="w-12 h-12 object-contain"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
-                ShuttleDesk <span className="text-red-500">BQAB</span>
-              </h1>
-            </div>
-          </div>
+         <div className="flex items-center space-x-0 pl-8">
+  <img
+    src="/logo.png"
+    alt="ShuttleDesk Logo"
+    className="w-12 h-12 object-contain"
+  />
+  <div>
+    {/* <h1 className="text-2xl font-bold text-white tracking-tight">
+      ShuttleDesk <span className="text-[#1e0066]">BQAB</span>
+    </h1> */}
+  </div>
+</div>
+
 
           <div className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => (
@@ -50,8 +51,8 @@ export default function Header() {
                 onClick={() => handleNavigate(link.path)}
                 className={`px-6 py-2 text-sm font-medium transition-all duration-300 rounded-lg ${
                   isActive(link.path)
-                    ? "text-white bg-red-600 shadow-lg shadow-red-600/50"
-                    : "text-gray-300 hover:text-white hover:bg-slate-700/50"
+                    ? "text-white bg-[#1e0066] shadow-lg "
+                    : "text-black hover:text-white hover:bg-[#1e0066]"
                 }`}
               >
                 {link.name}
