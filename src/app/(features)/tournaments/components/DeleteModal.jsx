@@ -22,7 +22,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, tournament, isDeleting }) => 
         <Trash2 size={28} />
       </div>
       <h3 className="text-lg font-semibold mb-2">
-        Delete <span className="text-red-400">{tournament?.name}</span>?
+        Delete <span className="text-[#e1ca1f]">{tournament?.name}</span>?
       </h3>
       <p className="text-gray-400 text-sm">
         Are you sure you want to permanently delete this tournament? This action cannot be undone.
@@ -41,7 +41,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, tournament, isDeleting }) => 
       <button
         onClick={onConfirm}
         disabled={isDeleting}
-        className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition flex items-center gap-2"
+        className="px-4 py-2 rounded-lg bg-[#1e0066] text-white font-medium hover:bg-[#1e0066] transition flex items-center gap-2"
       >
         {isDeleting ? (
           <>

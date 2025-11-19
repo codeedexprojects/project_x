@@ -148,7 +148,7 @@ export default function TournamentsTable() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-3 text-black pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute  right-4 top-1/3 transform -translate-y-1/2 text-black" size={20} />
           </div>
 
           {/* Total Tournament Card */}
@@ -211,7 +211,7 @@ export default function TournamentsTable() {
                     className="hover:bg-gray-50 cursor-pointer"
                   >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{tournament.name}</div>
+                      <div className="font-medium text-gray-900">{tournament.name.slice(0,20)}</div>
                     </td>
                     <td className="px-6 py-4 text-gray-700">
                       {tournament.location || "Location not specified"}

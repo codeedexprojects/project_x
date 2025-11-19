@@ -156,7 +156,7 @@ function EditModal({ isOpen, onClose }) {
                     placeholder="Enter tournament name"
                   />
                   {formErrors.name && (
-                    <p className="text-red-500 text-sm mt-2">{formErrors.name}</p>
+                    <p className="text-[#1e0066] text-sm mt-2">{formErrors.name}</p>
                   )}
                 </div>
 
@@ -186,7 +186,7 @@ function EditModal({ isOpen, onClose }) {
                       }`}
                     />
                     {formErrors.start_date && (
-                      <p className="text-red-500 text-sm mt-2">{formErrors.start_date}</p>
+                      <p className="text-[#1e0066] text-sm mt-2">{formErrors.start_date}</p>
                     )}
                   </div>
 
@@ -207,7 +207,7 @@ function EditModal({ isOpen, onClose }) {
                       }`}
                     />
                     {formErrors.end_date && (
-                      <p className="text-red-500 text-sm mt-2">{formErrors.end_date}</p>
+                      <p className="text-[#1e0066] text-sm mt-2">{formErrors.end_date}</p>
                     )}
                   </div>
                 </div>
@@ -229,7 +229,7 @@ function EditModal({ isOpen, onClose }) {
               <button
                 type="submit"
                 disabled={createLoading}
-                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center text-lg"
+                className="flex-1 bg-[#1e0066] hover:bg-[#1e0066] text-white font-medium py-4 px-6 rounded-xl transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center text-lg"
               >
                 {createLoading ? (
                   <>
