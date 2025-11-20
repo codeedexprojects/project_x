@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import { BASE_URL } from "../baseurl";
 
-//  Get all players
 export const getPlayersAdmin = createAsyncThunk(
   "adminAuth/getPlayersAdmin",
   async (_, { rejectWithValue }) => {
@@ -11,7 +10,7 @@ export const getPlayersAdmin = createAsyncThunk(
       const response = await axios.get(`${BASE_URL}/admin/user`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      return response.data; 
+      return response.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to get players"
@@ -20,7 +19,6 @@ export const getPlayersAdmin = createAsyncThunk(
   }
 );
 
-// Get user by ID
 export const getUserById = createAsyncThunk(
   "adminAuth/getUserById",
   async (id, { rejectWithValue }) => {
@@ -29,11 +27,31 @@ export const getUserById = createAsyncThunk(
       const response = await axios.get(`${BASE_URL}/admin/user/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("Single user response:", response.data);
-      return response.data; 
+      return response.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to get user details"
+      );
+    }
+  }
+);
+
+export const updateUser = createAsyncThunk(
+  "adminAuth/updateUser",
+  async ({ id, reqBody }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.patch(
+        `${BASE_URL}/admin/user/${id}`,
+        reqBody,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update user"
       );
     }
   }
@@ -47,9 +65,10 @@ const playersSlice = createSlice({
     loading: false,
     error: null,
   },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      // Get all players
+      
       .addCase(getPlayersAdmin.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -67,7 +86,7 @@ const playersSlice = createSlice({
         state.error = action.payload;
       })
 
-      //  Get single player by ID
+      
       .addCase(getUserById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -80,6 +99,37 @@ const playersSlice = createSlice({
           null;
       })
       .addCase(getUserById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+
+        const updatedUser =
+          action.payload?.data ||
+          action.payload ||
+          null;
+
+        
+        if (updatedUser?._id) {
+          const index = state.players.findIndex((u) => u._id === updatedUser._id);
+          if (index !== -1) {
+            state.players[index] = updatedUser;
+          }
+        }
+
+        
+        if (state.singleUser?._id === updatedUser?._id) {
+          state.singleUser = updatedUser;
+        }
+      })
+      .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });
