@@ -175,13 +175,18 @@ const rankingSlice = createSlice({
         state.error = null;
       })
       .addCase(getUniversalRankings.fulfilled, (state, action) => {
-        state.loading = false;
-        state.universalRankings =
-          action.payload?.data?.rankings ||
-          action.payload?.data ||
-          action.payload ||
-          [];
-      })
+  state.loading = false;
+
+  // 🔥 Correct fix: store actual ranking response
+  state.currentRanking = action.payload?.data || null;
+
+  // OPTIONAL: keep universalRankings list as backup
+  state.universalRankings =
+    action.payload?.data?.players ||
+    action.payload?.data ||
+    [];
+})
+
       .addCase(getUniversalRankings.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
