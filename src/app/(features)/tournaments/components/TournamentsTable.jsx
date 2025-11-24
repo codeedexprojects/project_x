@@ -131,20 +131,22 @@ export default function TournamentsTable() {
   const statuses = ["All", "Active", "Upcoming", "Completed"];
 
   // Filter tournaments based on search and status
-  const filteredTournaments = tournaments.filter((tournament) => {
-    const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    let matchesStatus = true;
-    if (selectedStatus === "Active") {
-      matchesStatus = isActive(tournament.start_date, tournament.end_date);
-    } else if (selectedStatus === "Upcoming") {
-      matchesStatus = isUpcoming(tournament.start_date);
-    } else if (selectedStatus === "Completed") {
-      matchesStatus = !isUpcoming(tournament.start_date) && !isActive(tournament.start_date, tournament.end_date);
-    }
-    
-    return matchesSearch && matchesStatus;
-  });
+const filteredTournaments = tournaments.filter((tournament) => {
+  // Safe check for tournament name
+  const tournamentName = tournament?.name || '';
+  const matchesSearch = tournamentName.toLowerCase().includes(searchTerm.toLowerCase());
+  
+  let matchesStatus = true;
+  if (selectedStatus === "Active") {
+    matchesStatus = isActive(tournament.start_date, tournament.end_date);
+  } else if (selectedStatus === "Upcoming") {
+    matchesStatus = isUpcoming(tournament.start_date);
+  } else if (selectedStatus === "Completed") {
+    matchesStatus = !isUpcoming(tournament.start_date) && !isActive(tournament.start_date, tournament.end_date);
+  }
+  
+  return matchesSearch && matchesStatus;
+});
 
   // Pagination
   const totalPages = Math.ceil(filteredTournaments.length / itemsPerPage);
@@ -244,9 +246,9 @@ export default function TournamentsTable() {
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {startIndex + index + 1}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {tournament.name}
-                          </td>
+                         <td className="px-6 py-4 text-sm text-gray-900">
+  {tournament?.name || 'Unnamed Tournament'}
+</td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {tournament.location || "Location not specified"}
                           </td>
