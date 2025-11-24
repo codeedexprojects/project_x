@@ -2,7 +2,24 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronDown, ChevronUp, Users, Trophy, Calendar, MapPin, PersonStanding, HandFist, ShieldHalf, Annoyed, CopyCheck, SquarePlus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Users,
+  Trophy,
+  Calendar,
+  MapPin,
+  Award,
+  Users2,
+  User,
+  Sword,
+  Shield,
+  CopyCheck,
+  SquarePlus,
+  Crown,
+  Medal,
+  Star,
+} from "lucide-react";
 import { getTournamentById } from "@/redux/slice/tournamentSlice";
 
 export default function TournamentDetails() {
@@ -11,7 +28,7 @@ export default function TournamentDetails() {
   const { singleTournament, loading, error } = useSelector(
     (state) => state.tournamentsSlice
   );
-  
+
   const [expandedCategories, setExpandedCategories] = useState({});
 
   useEffect(() => {
@@ -19,13 +36,13 @@ export default function TournamentDetails() {
   }, [dispatch, id]);
 
   const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => ({
+    setExpandedCategories((prev) => ({
       ...prev,
-      [categoryId]: !prev[categoryId]
+      [categoryId]: !prev[categoryId],
     }));
   };
 
-   const formatDateTime = (dateString) => {
+  const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -36,172 +53,197 @@ export default function TournamentDetails() {
     });
   };
 
-
   const getCategoryIcon = (type) => {
     switch (type) {
-      case 'doubles':
-        return <Users size={16} className="text-blue-400" />;
-      case 'singles':
-        return <Users size={16} className="text-green-400" />;
+      case "doubles":
+        return <Users2 size={20} className="text-blue-600" />;
+      case "singles":
+        return <User size={20} className="text-green-600" />;
       default:
-        return <Trophy size={16} className="text-yellow-400" />;
+        return <Trophy size={20} className="text-yellow-600" />;
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-500/20 text-green-400';
-      case 'ongoing':
-        return 'bg-blue-500/20 text-blue-400';
-      case 'upcoming':
-        return 'bg-yellow-500/20 text-yellow-400';
+      case "completed":
+        return (
+          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+            Completed
+          </span>
+        );
+      case "ongoing":
+        return (
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium border border-blue-200">
+            Ongoing
+          </span>
+        );
+      case "upcoming":
+        return (
+          <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-200">
+            Upcoming
+          </span>
+        );
       default:
-        return 'bg-gray-500/20 text-gray-400';
+        return (
+          <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium border border-gray-200">
+            Unknown
+          </span>
+        );
     }
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6 flex items-center justify-center">
-      <p className="text-gray-400 text-xl">Loading tournament details...</p>
-    </div>
-  );
-  
-  if (error) return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6 flex items-center justify-center">
-      <p className="text-red-500 text-xl">{error}</p>
-    </div>
-  );
+  const getPositionIcon = (position) => {
+    switch (position?.toLowerCase()) {
+      case "winner":
+        return <Crown size={16} className="text-yellow-600" />;
+      case "runner-up":
+        return <Medal size={16} className="text-gray-600" />;
+      case "semifinal":
+        return <Award size={16} className="text-orange-600" />;
+      case "quarter final":
+        return <Star size={16} className="text-purple-600" />;
+      default:
+        return <Award size={16} className="text-blue-600" />;
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-white p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Loading tournament details...</p>
+        </div>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="min-h-screen bg-white p-6 flex items-center justify-center">
+        <div className="text-center bg-red-50 p-8 rounded-lg border border-red-200">
+          <p className="text-red-600 text-xl font-semibold">{error}</p>
+          <p className="text-red-500 mt-2">Please try refreshing the page</p>
+        </div>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-900 p-6">
-      <div className="">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-100 mb-4">
-            {singleTournament?.name}
-          </h1>
-          
-          <div className="flex flex-wrap gap-6 mb-6">
-          <div className="flex items-center gap-2 text-gray-300">
-  <Calendar size={20} className="text-red-400" />
-  Starts: {singleTournament?.start_date ? formatDateTime(singleTournament.start_date) : "Loading..."}
-</div>
-            
-            <div className="flex items-center gap-2 text-gray-300">
-              <MapPin size={20} className="text-red-400" />
-              <span>{singleTournament?.location}</span>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+                  {singleTournament?.name}
+                </h1>
+                {getStatusBadge(singleTournament?.status)}
+              </div>
+              
+              <div className="flex flex-wrap gap-6 mb-6">
+                <div className="flex items-center gap-3 text-gray-700 bg-gray-50 px-4 py-2 rounded-lg">
+                  <Calendar size={18} className="text-blue-600" />
+                  <span className="font-medium">Starts:</span>
+                  <span>
+                    {singleTournament?.start_date
+                      ? formatDateTime(singleTournament.start_date)
+                      : "N/A"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700 bg-gray-50 px-4 py-2 rounded-lg">
+                  <MapPin size={18} className="text-red-600" />
+                  <span className="font-medium">Location:</span>
+                  <span>{singleTournament?.location || "N/A"}</span>
+                </div>
+              </div>
             </div>
-       
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg">
-                  <Trophy className="text-red-400" size={24} />
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Trophy className="text-blue-600" size={20} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics?.totalCategories}</p>
-                  <p className="text-gray-400 text-sm">Total Categories</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <Users className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.uniqueUsers}</p>
-                  <p className="text-gray-400 text-sm">Total Players</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <SquarePlus className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.singlesCategories}</p>
-                  <p className="text-gray-400 text-sm">Single category</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <CopyCheck className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.doublesCategories}</p>
-                  <p className="text-gray-400 text-sm">Double Category</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <Annoyed className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalPlayerEntries}</p>
-                  <p className="text-gray-400 text-sm"> Players Entries</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <ShieldHalf className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalTeams}</p>
-                  <p className="text-gray-400 text-sm">Total Teams</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg">
-                  <PersonStanding className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.totalIndividualPlayers}</p>
-                  <p className="text-gray-400 text-sm">Individual Players</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-lg">
-                  <HandFist className="text-blue-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">{singleTournament?.statistics.uniqueUsers}</p>
-                  <p className="text-gray-400 text-sm">Unique Users</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
-              <div className="flex items-center gap-3">
-                <div className="p-3  rounded-lg">
-                  <Calendar className="text-green-400" size={24} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-100">
-                    {singleTournament?.categories?.filter(cat => cat.type === 'doubles').length}
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.totalCategories || 0}
                   </p>
-                  <p className="text-gray-400 text-sm">Doubles Events</p>
+                  <p className="text-gray-600 text-sm">Total Categories</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Users className="text-green-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.uniqueUsers || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm">Total Players</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <SquarePlus className="text-purple-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.singlesCategories || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm">Singles</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <CopyCheck className="text-orange-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.doublesCategories || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm">Doubles</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border border-red-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Shield className="text-red-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.totalTeams || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm">Total Teams</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-xl p-4 border border-cyan-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Sword className="text-cyan-600" size={20} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {singleTournament?.statistics?.totalPlayerEntries || 0}
+                  </p>
+                  <p className="text-gray-600 text-sm">Total Entries</p>
                 </div>
               </div>
             </div>
@@ -209,96 +251,158 @@ export default function TournamentDetails() {
         </div>
 
         {/* Categories Section */}
-        <div className="bg-zinc-800/50 rounded-xl border border-zinc-700/50 backdrop-blur-sm">
-          <div className="px-6 py-4 border-b border-zinc-700">
-            <h2 className="text-2xl font-bold text-gray-100">Tournament Categories</h2>
-            <p className="text-gray-400 mt-1">Click on a category to view participants</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Tournament Categories
+            </h2>
+            <p className="text-gray-600 mt-2">
+              Click on a category to view participants and their achievements
+            </p>
           </div>
 
-          <div className="divide-y divide-zinc-700/50">
+          <div className="divide-y divide-gray-200">
             {singleTournament?.categories?.map((category) => (
-              <div key={category._id} className="hover:bg-zinc-700/30 transition-colors duration-200">
+              <div
+                key={category._id}
+                className="hover:bg-gray-50 transition-colors duration-200"
+              >
                 {/* Category Header */}
-                <div 
-                  className="px-6 py-4 flex items-center justify-between cursor-pointer"
+                <div
+                  className="px-8 py-6 flex items-center justify-between cursor-pointer"
                   onClick={() => toggleCategory(category._id)}
                 >
                   <div className="flex items-center gap-4">
-                    {getCategoryIcon(category.type)}
+                    <div className="p-3 bg-gray-100 rounded-xl">
+                      {getCategoryIcon(category.type)}
+                    </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-100">{category.name}</h3>
-                      <p className="text-gray-400 text-sm capitalize">
-                        {category.type} • {category.players?.length || 0} participants
-                      </p>
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {category.name}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {category.type}
+                        </span>
+                        <span className="text-gray-600 text-sm">
+                          {category.players?.length || 0} participants
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-4">
-                    <span className="text-gray-400 text-sm">
-                      {expandedCategories[category._id] ? 'Hide' : 'Show'} Participants
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-sm font-medium">
+                      {expandedCategories[category._id] ? "Hide" : "View"} Participants
                     </span>
-                    {expandedCategories[category._id] ? (
-                      <ChevronUp size={20} className="text-gray-400" />
-                    ) : (
-                      <ChevronDown size={20} className="text-gray-400" />
-                    )}
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      {expandedCategories[category._id] ? (
+                        <ChevronUp size={20} className="text-gray-600" />
+                      ) : (
+                        <ChevronDown size={20} className="text-gray-600" />
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Participants List */}
                 {expandedCategories[category._id] && (
-                  <div className="px-6 py-4 bg-zinc-800/30 border-t border-zinc-700/50">
-                    <div className="grid gap-3">
+                  <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
+                    <div className="grid gap-4">
                       {category.players?.map((player, index) => (
-                        <div 
+                        <div
                           key={player._id}
-                          className="flex items-center justify-between p-3 bg-zinc-700/20 rounded-lg border border-zinc-600/30"
+                          className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 flex items-center justify-center bg-zinc-600 rounded-full text-sm font-semibold text-gray-200">
-                              {index + 1}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 rounded-full text-sm font-semibold text-white shadow-sm">
+                                {index + 1}
+                              </div>
+
+                              <div>
+                                {category.type === "doubles" ? (
+                                  <div>
+                                    <p className="text-lg font-semibold text-gray-900">
+                                      {player.player1} & {player.player2}
+                                    </p>
+                                    <div className="flex items-center gap-4 mt-1">
+                                      <span className="text-gray-600 text-sm">
+                                        QID: {player.user1?.qid}
+                                      </span>
+                                      <span className="text-gray-600 text-sm">
+                                        QID: {player.user2?.qid}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="text-lg font-semibold text-gray-900">
+                                      {player.player1 || player.name}
+                                    </p>
+                                    <p className="text-gray-600 text-sm">
+                                      Member ID: {player.memberId}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            
-                            <div>
-                              {category.type === 'doubles' ? (
-                                <div>
-                                  <p className="text-gray-100 font-medium">
-                                    {player.player1} & {player.player2}
-                                  </p>
-                                  <p className="text-gray-400 text-sm">
-                                    {player.user1?.qid} • {player.user2?.qid}
-                                  </p>
-                                </div>
-                              ) : (
-                                <div>
-                                  <p className="text-gray-100 font-medium">
-                                    {player.player1 || player.name}
-                                  </p>
-                                  <p className="text-gray-400 text-sm">
-                                    {player.memberId}
-                                  </p>
-                                </div>
-                              )}
+
+                            <div className="text-right">
+                              <div className="flex items-center gap-2 justify-end mb-2">
+                                {getPositionIcon(player.displayPosition)}
+                                <span className="text-lg font-bold text-gray-900">
+                                  {player.displayPosition || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 justify-end">
+                                <Trophy size={18} className="text-yellow-600" />
+                                <span className="text-gray-900 font-semibold">
+                                  {player.points || 0} points
+                                </span>
+                              </div>
                             </div>
                           </div>
-                          
-                          <div className="text-right">
-                            <div className="flex items-center gap-2">
-                              <Trophy size={16} className="text-yellow-400" />
-                              <span className="text-gray-100 font-semibold">
-                                {player.points || 0} pts
-                              </span>
+
+                          {/* Additional player stats for doubles */}
+                          {category.type === "doubles" && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-100">
+                              <div className="space-y-2">
+                                <h4 className="font-semibold text-gray-900 text-sm">
+                                  Player 1 Details
+                                </h4>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Total Points:</span>
+                                  <span className="font-semibold">{player.user1?.totalPoints || 0}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Category Points:</span>
+                                  <span className="font-semibold">{player.user1?.categoryPoints || 0}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <h4 className="font-semibold text-gray-900 text-sm">
+                                  Player 2 Details
+                                </h4>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Total Points:</span>
+                                  <span className="font-semibold">{player.user2?.totalPoints || 0}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Category Points:</span>
+                                  <span className="font-semibold">{player.user2?.categoryPoints || 0}</span>
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-gray-400 text-sm">
-                              Position: {player.position || 'N/A'}
-                            </p>
-                          </div>
+                          )}
                         </div>
                       ))}
-                      
+
                       {(!category.players || category.players.length === 0) && (
-                        <div className="text-center py-6 text-gray-400">
-                          No participants in this category
+                        <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-gray-300">
+                          <Trophy size={48} className="text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500 text-lg font-medium">No participants in this category</p>
+                          <p className="text-gray-400 mt-1">Participants will appear here once registered</p>
                         </div>
                       )}
                     </div>
@@ -308,17 +412,24 @@ export default function TournamentDetails() {
             ))}
           </div>
 
-          {(!singleTournament?.categories || singleTournament.categories.length === 0) && (
-            <div className="px-6 py-12 text-center text-gray-400">
-              No categories found for this tournament
+          {(!singleTournament?.categories ||
+            singleTournament.categories.length === 0) && (
+            <div className="px-8 py-16 text-center bg-white">
+              <Trophy size={64} className="text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500 text-xl font-medium">No categories found</p>
+              <p className="text-gray-400 mt-2">This tournament doesn't have any categories yet</p>
             </div>
           )}
         </div>
 
         {/* Footer Info */}
-        <div className="mt-6 text-center text-gray-400 text-sm">
-          Tournament ID: {singleTournament?._id} • 
-          Last updated: {new Date().toLocaleDateString()}
+        <div className="mt-8 text-center text-gray-500 text-sm bg-white p-4 rounded-xl border border-gray-200">
+          <p>
+            Tournament ID: {singleTournament?._id} • Created:{" "}
+            {singleTournament?.timestamps?.createdAt
+              ? formatDateTime(singleTournament.timestamps.createdAt)
+              : "N/A"}
+          </p>
         </div>
       </div>
     </div>

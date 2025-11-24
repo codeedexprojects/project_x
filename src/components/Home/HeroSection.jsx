@@ -39,7 +39,7 @@ export default function ShuttleDeskHome() {
       {/* Right Image */}
       <div className="relative z-10 w-full lg:w-[85%] flex justify-end">
         <img
-          src="/girlbg.png"
+          src="/Hero.png"
           alt="Badminton Player"
           className="w-full max-w-[950px] object-cover lg:object-contain"
         />

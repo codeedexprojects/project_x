@@ -24,7 +24,7 @@ export const getClubs = createAsyncThunk(
   }
 );
 
-// createclub
+// createclub (updated for FormData)
 export const createClubs = createAsyncThunk(
   "clubs/createClubs",
   async (clubData, { rejectWithValue }) => {
@@ -34,20 +34,20 @@ export const createClubs = createAsyncThunk(
       const response = await axios.post(`${BASE_URL}/admin/club`, clubData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": "multipart/form-data", // Changed to multipart/form-data
         },
       });
 
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to get clubs"
+        error.response?.data?.message || "Failed to create club"
       );
     }
   }
 );
 
-// editclub
+// editclub (updated for FormData)
 export const editClubs = createAsyncThunk(
   "clubs/editClubs",
   async ({ id, clubData }, { rejectWithValue }) => {
@@ -60,7 +60,7 @@ export const editClubs = createAsyncThunk(
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data", // Changed to multipart/form-data
           },
         }
       );
@@ -68,7 +68,7 @@ export const editClubs = createAsyncThunk(
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to edit clubs"
+        error.response?.data?.message || "Failed to edit club"
       );
     }
   }

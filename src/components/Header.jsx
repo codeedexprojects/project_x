@@ -5,96 +5,106 @@ import { usePathname, useRouter } from "next/navigation";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState("Home");
   const router = useRouter();
   const pathname = usePathname();
-  const isActive = (path) => pathname === path;
 
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Players", path: "/players" },
     { name: "Tournaments", path: "/tournaments" },
     { name: "Clubs", path: "/clubs" },
-    { name: "Rankings", path: "/rankings" },
-    // { name: "Categories", path: "/categorylist" },
-    { name: "Exports", path: "/exports" },
-    { name: "Login", path: "/login" },
+    { name: "Ranking", path: "/rankings" },
+    { name: "Umpire", path: "/umpire" },
   ];
 
-  const handleNavigate = (path) => {
+  const isActive = (p) => pathname === p;
+
+  const goTo = (path) => {
     router.push(path);
     setIsMenuOpen(false);
   };
 
   return (
-    <header className="bg-white shadow-lg">
-      <nav className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo Section */}
-          <div className="flex items-center space-x-0 pl-4 sm:pl-8">
-            <img
-              src="/logo.png"
-              alt="ShuttleDesk Logo"
-              className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-            />
-          </div>
+    <header className="w-full bg-[#000] backdrop-blur-md border-b border-white/10">
+      <nav className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        
+        {/* Logo */}
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => goTo("/")}>
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-12 h-12 object-contain"
+          />
+          <h1 className="text-white text-xl font-semibold">ShuttleDesk BQAB</h1>
+        </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center flex-wrap gap-1">
-            {navLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => handleNavigate(link.path)}
-                className={`px-5 py-2 text-sm font-medium transition-all duration-300 rounded-lg ${
-                  link.name === "Login"
-                    ? "text-white bg-gradient-to-r from-[#240083] to-[#08001D] hover:opacity-90"
-                    : isActive(link.path)
-                    ? "text-white bg-[#1e0066] shadow-lg"
-                    : "text-black hover:text-white hover:bg-[#1e0066]"
-                }`}
-              >
-                {link.name}
-              </button>
-            ))}
-          </div>
+        {/* Desktop Menu */}
+        <div className="hidden md:flex items-center gap-2">
+          {navLinks.map((link) => (
+            <button
+              key={link.name}
+              onClick={() => goTo(link.path)}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-300
+                text-white
+                ${
+                  isActive(link.path)
+                    ? "bg-[linear-gradient(180deg,rgba(16,16,16,0)_51.11%,rgba(23,5,124,0.8)_100%)] backdrop-blur-md"
+                    : "hover:bg-white/10"
+                }
+              `}
+            >
+              {link.name}
+            </button>
+          ))}
 
-          {/* Mobile Menu Toggle */}
+          {/* Login button */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-black p-2 rounded-lg hover:bg-gray-200 transition-colors"
-            aria-label="Toggle menu"
+            onClick={() => goTo("/login")}
+            className="ml-3 px-6 py-2 rounded-md text-white font-medium 
+            bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]
+            hover:opacity-90 transition"
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            Login
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4 space-y-2 animate-fadeIn">
-            {navLinks.map((link) => (
-              <button
-                key={link.name}
-                onClick={() => {
-                  setActiveLink(link.name);
-                  handleNavigate(link.path);
-                }}
-                className={`block w-full text-left px-6 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
-                  link.name === "Login"
-                    ? "text-white bg-gradient-to-r from-[#240083] to-[#08001D] hover:opacity-90"
-                    : activeLink === link.name
-                    ? "text-white bg-[#1e0066] shadow-lg"
-                    : "text-gray-800 hover:text-white hover:bg-[#1e0066]"
-                }`}
-              >
-                {link.name}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Mobile toggle */}
+        <button
+          className="md:hidden text-white p-2"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+        </button>
       </nav>
 
-      {/* Bottom Accent Line */}
-      <div className="h-1 bg-[#1e0066]"></div>
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-[#1a1a1a]/90 backdrop-blur-md border-t border-white/10 p-4 space-y-2">
+          {navLinks.map((link) => (
+            <button
+              key={link.name}
+              onClick={() => goTo(link.path)}
+              className={`block w-full text-left px-4 py-2 rounded-md text-white
+                ${
+                  isActive(link.path)
+                    ? "bg-[linear-gradient(180deg,rgba(16,16,16,0)_51.11%,rgba(23,5,124,0.8)_100%)] backdrop-blur-md"
+                    : "hover:bg-white/10"
+                }
+              `}
+            >
+              {link.name}
+            </button>
+          ))}
+
+          <button
+            onClick={() => goTo("/login")}
+            className="block w-full text-left px-4 py-2 rounded-md text-white 
+            bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]"
+          >
+            Login
+          </button>
+        </div>
+      )}
     </header>
   );
 }

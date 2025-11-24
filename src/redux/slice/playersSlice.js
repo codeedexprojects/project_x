@@ -38,14 +38,16 @@ export const getUserById = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   "adminAuth/updateUser",
-  async ({ id, reqBody }, { rejectWithValue }) => {
+  async ({ id, formData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("accessToken");
       const response = await axios.patch(
         `${BASE_URL}/admin/user/${id}`,
-        reqBody,
+        formData, 
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { 
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
       return response.data;

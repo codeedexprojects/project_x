@@ -131,50 +131,68 @@ export default function PlayersTable() {
           </div>
 
           {/* Table Section - Desktop */}
-          <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-            {loading ? (
-              <div className="px-6 py-12 text-center text-gray-500">
-                Loading players...
-              </div>
-            ) : error ? (
-              <div className="px-6 py-12 text-center text-red-500">{error}</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-[#1e0066] text-white">
-                      <th className="px-6 py-3.5 text-left font-normal text-sm border-r border-[#2a0080] last:border-r-0">Player name</th>
-                      <th className="px-6 py-3.5 text-left font-normal text-sm border-r border-[#2a0080] last:border-r-0">QID</th>
-                      <th className="px-6 py-3.5 text-left font-normal text-sm border-r border-[#2a0080] last:border-r-0">Club</th>
-                      <th className="px-6 py-3.5 text-left font-normal text-sm border-r border-[#2a0080] last:border-r-0">Country</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white">
-                    {currentPlayers.length > 0 ? (
-                      currentPlayers.map((player) => (
-                        <tr 
-                          key={player._id} 
-                          onClick={() => handlePlayerClick(player._id)}
-                          className="border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                          <td className="px-6 py-4 text-gray-900 text-sm border-r border-gray-200 last:border-r-0">{player.name}</td>
-                          <td className="px-6 py-4 text-gray-900 text-sm border-r border-gray-200 last:border-r-0">{player.qid}</td>
-                          <td className="px-6 py-4 text-gray-900 text-sm border-r border-gray-200 last:border-r-0">{player.club?.name || 'N/A'}</td>
-                          <td className="px-6 py-4 text-gray-900 text-sm border-r border-gray-200 last:border-r-0">{player.country || 'N/A'}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-                          No players found matching your search criteria
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+         {/* Table Section - Desktop */}
+<div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+  {loading ? (
+    <div className="px-6 py-12 text-center text-gray-500">
+      Loading players...
+    </div>
+  ) : error ? (
+    <div className="px-6 py-12 text-center text-red-500">{error}</div>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="text-[#1a1a1a] bg-[#fafafa] border-b border-gray-200">
+            <th className="px-6 py-4 font-semibold text-sm text-left">Sl.no</th>
+            <th className="px-6 py-4 font-semibold text-sm text-left">Player name</th>
+            <th className="px-6 py-4 font-semibold text-sm text-left">QID</th>
+            <th className="px-6 py-4 font-semibold text-sm text-left">Club</th>
+            <th className="px-6 py-4 font-semibold text-sm text-left">Country</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {currentPlayers.length > 0 ? (
+            currentPlayers.map((player, index) => (
+              <tr
+                key={player._id}
+                onClick={() => handlePlayerClick(player._id)}
+                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+              >
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {startIndex + index + 1}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {player.name}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {player.qid}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {player.club?.name || "N/A"}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {player.country || "N/A"}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan="5"
+                className="px-6 py-12 text-center text-gray-500"
+              >
+                No players found matching your search criteria
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+
 
           {/* Card View - Mobile */}
           <div className="md:hidden space-y-4">
