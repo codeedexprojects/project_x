@@ -6,7 +6,7 @@ import clubReducer from "./slice/clubSlice";
 import categoryReducer from "./slice/categorySlice";
 import umpireReducer from "./slice/umpireSlice"
 import rankingReducer from "./slice/rankingSlice"
-
+import dashboardReducer from "./slice/dashboardSlice"
 export const store = configureStore({
   reducer: {
     adminAuth: adminAuthReducer,
@@ -16,6 +16,7 @@ export const store = configureStore({
     category: categoryReducer,
     umpires: umpireReducer,
     rankings: rankingReducer,
+    dashboard: dashboardReducer,
   },
 });
 
