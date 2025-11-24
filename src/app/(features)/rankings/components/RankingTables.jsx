@@ -363,7 +363,7 @@ const LeaderboardTable = () => {
                       <th className="px-6 py-4 font-semibold text-sm text-left">Rank</th>
                       <th className="px-6 py-4 font-semibold text-sm text-left">Player Information</th>
                       <th className="px-6 py-4 font-semibold text-sm text-left">Partner Information</th>
-                      <th className="px-6 py-4 font-semibold text-sm text-left">Position</th>
+                      {/* <th className="px-6 py-4 font-semibold text-sm text-left">Position</th> */}
                       <th className="px-6 py-4 font-semibold text-sm text-left">Points</th>
                     </tr>
                   </thead>
@@ -397,11 +397,11 @@ const LeaderboardTable = () => {
                               <span className="text-gray-400 text-sm">No Partner</span>
                             )}
                           </td>
-                          <td className="px-6 py-4">
+                          {/* <td className="px-6 py-4">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {player.position}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
