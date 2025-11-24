@@ -14,12 +14,20 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "next/navigation";
-import { getUmpireById, updateUmpire } from "@/redux/slice/umpireSlice";
+import { assignUmpireToTournament, deleteUmpire, getUmpireById, removeUmpireFromTournament, updateUmpire } from "@/redux/slice/umpireSlice";
 import toast from "react-hot-toast";
+import { getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
 
 export default function UmpireDetails() {
   const { id } = useParams();
   const dispatch = useDispatch();
+  const [showTournamentModal, setShowTournamentModal] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState(null);
+
+  // get tournaments
+  const { tournaments } = useSelector((state) => state.tournamentsSlice);
+
+
   const { currentUmpire, loading, updateLoading } = useSelector(
     (state) => state.umpires
   );
@@ -27,6 +35,10 @@ export default function UmpireDetails() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [localSaveLoading, setLocalSaveLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUnassignModal, setShowUnassignModal] = useState(false);
+  const [pendingUnassignTournamentId, setPendingUnassignTournamentId] = useState(null);
+
 
   useEffect(() => {
     if (id) {
@@ -70,12 +82,12 @@ export default function UmpireDetails() {
 
   const handleSave = async () => {
     setLocalSaveLoading(true);
-    
+
     try {
       // Validate required fields
       const requiredFields = ['name', 'country', 'passport', 'gender', 'mobileNumber'];
       const missingFields = requiredFields.filter(field => !formData[field]?.trim());
-      
+
       if (missingFields.length > 0) {
         toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
         setLocalSaveLoading(false);
@@ -83,7 +95,7 @@ export default function UmpireDetails() {
       }
 
       const result = await dispatch(updateUmpire({ id, data: formData }));
-      
+
       if (result.meta.requestStatus === 'fulfilled') {
         toast.success("Umpire updated successfully!");
         setIsEditing(false);
@@ -99,6 +111,75 @@ export default function UmpireDetails() {
       setLocalSaveLoading(false);
     }
   };
+
+  const handleAssignTournament = async () => {
+    if (!selectedTournament) {
+      toast.error("Please select a tournament");
+      return;
+    }
+
+    const result = await dispatch(
+      assignUmpireToTournament({
+        umpireId: currentUmpire._id,
+        tournamentId: selectedTournament,
+      })
+    );
+
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Tournament assigned successfully!");
+      setShowTournamentModal(false);
+      dispatch(getUmpireById(id)); // refresh page
+    } else {
+      toast.error("Failed to assign tournament");
+    }
+  };
+
+  // UNASSIGN TOURNAMENT
+  const handleUnassignClick = (tournamentId) => {
+    setPendingUnassignTournamentId(tournamentId);
+    setShowUnassignModal(true);
+  };
+
+  const confirmUnassign = async () => {
+    const result = await dispatch(
+      removeUmpireFromTournament({
+        umpireId: currentUmpire._id,
+        tournamentId: pendingUnassignTournamentId,
+      })
+    );
+
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Tournament unassigned successfully!");
+      dispatch(getUmpireById(id));
+    } else {
+      toast.error("Failed to unassign tournament");
+    }
+
+    setShowUnassignModal(false);
+  };
+
+
+
+  // DELETE UMPIRE
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUmpire = async () => {
+    const result = await dispatch(deleteUmpire(currentUmpire._id));
+
+    if (result.meta.requestStatus === "fulfilled") {
+      toast.success("Umpire deleted successfully!");
+      window.location.href = "/umpire";
+    } else {
+      toast.error("Failed to delete umpire");
+    }
+
+    setShowDeleteModal(false);
+  };
+
+
+
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -232,9 +313,8 @@ export default function UmpireDetails() {
           type={field.type}
           value={formData[field.key] || ""}
           onChange={(e) => handleInputChange(field.key, e.target.value)}
-          className={`w-full text-sm text-gray-800 bg-white px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors ${
-            IconComponent ? "pl-10" : ""
-          } ${localSaveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full text-sm text-gray-800 bg-white px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors ${IconComponent ? "pl-10" : ""
+            } ${localSaveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           placeholder={`Enter ${field.label.toLowerCase()}`}
           min={field.type === "number" ? "0" : undefined}
           disabled={localSaveLoading}
@@ -282,21 +362,30 @@ export default function UmpireDetails() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-100 rounded-lg">
               <User className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-800">
-                Umpire Profile
-              </h1>
-              <p className="text-sm text-gray-500">
-                Manage umpire information and tournament assignments
-              </p>
+              <h1 className="text-xl font-semibold text-gray-800">Umpire Profile</h1>
+              <p className="text-sm text-gray-500">Manage umpire information and tournament assignments</p>
             </div>
           </div>
 
+          {/* ✅ Move Assign Button Here */}
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+
+            <button
+              onClick={() => {
+                dispatch(getTournamentsAdmin());
+                setShowTournamentModal(true);
+              }}
+              className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+            >
+              Assign Tournament
+            </button>
+
             {!isEditing ? (
               <>
                 <button
@@ -336,9 +425,16 @@ export default function UmpireDetails() {
                 </button>
               </>
             )}
+            <button
+              onClick={handleDeleteClick}
+
+              className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
+            >
+              Delete Umpire
+            </button>
+
           </div>
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Personal Information */}
           <div className="lg:col-span-1">
@@ -452,7 +548,7 @@ export default function UmpireDetails() {
 
             {/* Tournament Assignments */}
             {currentUmpire.assignedTournaments &&
-            currentUmpire.assignedTournaments.length > 0 ? (
+              currentUmpire.assignedTournaments.length > 0 ? (
               currentUmpire.assignedTournaments.map((assignment, index) => (
                 <div
                   key={assignment._id}
@@ -509,7 +605,7 @@ export default function UmpireDetails() {
                         <span className="text-gray-500">Categories:</span>
                         <span className="text-gray-800 ml-2">
                           {assignment.categories &&
-                          assignment.categories.length > 0
+                            assignment.categories.length > 0
                             ? assignment.categories.join(", ")
                             : "All Categories"}
                         </span>
@@ -520,6 +616,16 @@ export default function UmpireDetails() {
                           {assignment.tournament._id}
                         </span>
                       </div>
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => handleUnassignClick(assignment.tournament._id)}
+
+                          className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+                        >
+                          Unassign
+                        </button>
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -538,6 +644,100 @@ export default function UmpireDetails() {
           </div>
         </div>
       </div>
+      {showTournamentModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white text-black w-full max-w-lg p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Assign Tournament</h2>
+
+            {tournaments.length === 0 ? (
+              <p className="text-gray-500">No tournaments found.</p>
+            ) : (
+              <div className="max-h-72 overflow-y-auto space-y-3">
+                {tournaments.map((t) => (
+                  <div
+                    key={t._id}
+                    onClick={() => setSelectedTournament(t._id)}
+                    className={`p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 ${selectedTournament === t._id
+                      ? "border-indigo-600 bg-indigo-100"
+                      : "border-gray-300"
+                      }`}
+                  >
+                    <h3 className="font-medium">{t.name}</h3>
+                    <p className="text-xs text-gray-500">
+                      {new Date(t.start_date).toLocaleDateString()} -{" "}
+                      {new Date(t.end_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-gray-600">{t.location}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowTournamentModal(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleAssignTournament}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+              >
+                Assign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg text-black">
+            <h2 className="text-lg font-semibold mb-4">Delete Umpire</h2>
+            <p className="text-gray-600">Are you sure you want to delete this umpire? This action cannot be undone.</p>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={confirmDeleteUmpire}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showUnassignModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg text-black">
+            <h2 className="text-lg font-semibold mb-4">Unassign Tournament</h2>
+            <p className="text-gray-600">Are you sure you want to unassign this tournament from the umpire?</p>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowUnassignModal(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmUnassign}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                Unassign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

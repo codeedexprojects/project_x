@@ -16,7 +16,8 @@ const LeaderboardTable = () => {
   } = useSelector((state) => state.rankings);
 
   const { tournaments } = useSelector((state) => state.tournamentsSlice);
-  const { categories } = useSelector((state) => state.category);
+ const { category: categories } = useSelector((state) => state.category);
+
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTournament, setSelectedTournament] = useState('');
