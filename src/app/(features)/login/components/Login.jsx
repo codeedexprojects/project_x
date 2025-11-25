@@ -1,10 +1,11 @@
+// app/login/page.js
 "use client";
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "@/hooks/useAuth";
 import { loginAdmin } from "@/redux/slice/adminAuth";
-
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,41 +14,60 @@ export default function LoginPage() {
 
   const dispatch = useDispatch();
   const router = useRouter();
+  const { login: authLogin, isAuthenticated } = useAuth();
 
-  const { loading, error, isAuthenticated, message } = useSelector(
+  const { loading, error, message, isAuthenticated: reduxAuthenticated } = useSelector(
     (state) => state.adminAuth
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(loginAdmin({ email, password }));
+    if (!email || !password) {
+      return;
+    }
+    
+    dispatch(loginAdmin({ email, password }))
+      .unwrap()
+      .then((result) => {
+        if (result.accessToken && result.admin) {
+          authLogin({
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            admin: result.admin
+          });
+          router.push("/");
+        }
+      })
+      .catch((error) => {
+        console.error('Login failed:', error);
+      });
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated || reduxAuthenticated) {
       router.push("/");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, reduxAuthenticated, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8 space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-            <p className="text-gray-500">Sign in to your account to continue</p>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Login</h1>
+            <p className="text-gray-500">Sign in to your admin account</p>
           </div>
 
-          {/* ✅ Display messages */}
+          {/* Display messages */}
           {error && (
-            <p className="text-red-600 text-sm text-center bg-red-50 p-2 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
-            </p>
+            </div>
           )}
           {message && (
-            <p className="text-green-600 text-sm text-center bg-green-50 p-2 rounded">
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
               {message}
-            </p>
+            </div>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -69,7 +89,8 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block text-black w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none"
-                  placeholder="you@example.com"
+                  placeholder="admin@example.com"
+                  required
                 />
               </div>
             </div>
@@ -93,6 +114,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="block text-black w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 outline-none"
                   placeholder="••••••••"
+                  required
                 />
                 <button
                   type="button"

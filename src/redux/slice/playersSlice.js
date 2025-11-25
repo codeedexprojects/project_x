@@ -27,6 +27,8 @@ export const getUserById = createAsyncThunk(
       const response = await axios.get(`${BASE_URL}/admin/user/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log(response);
+      
       return response.data;
     } catch (error) {
       return rejectWithValue(

@@ -420,17 +420,7 @@ export default function TournamentDetails() {
               <p className="text-gray-400 mt-2">This tournament doesn't have any categories yet</p>
             </div>
           )}
-        </div>
-
-        {/* Footer Info */}
-        <div className="mt-8 text-center text-gray-500 text-sm bg-white p-4 rounded-xl border border-gray-200">
-          <p>
-            Tournament ID: {singleTournament?._id} • Created:{" "}
-            {singleTournament?.timestamps?.createdAt
-              ? formatDateTime(singleTournament.timestamps.createdAt)
-              : "N/A"}
-          </p>
-        </div>
+        </div>        
       </div>
     </div>
   );

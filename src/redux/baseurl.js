@@ -1,2 +1,2 @@
 
-export const BASE_URL = "https://bqab-backend-1.onrender.com";
+export const BASE_URL = "http://localhost:3006";

@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Filter, File } from "lucide-react";
 import CreatePlayerModal from "./AddPlayer";
 import { useDispatch, useSelector } from "react-redux";
 import { getPlayersAdmin } from "@/redux/slice/playersSlice";
 import { useRouter } from "next/navigation";
+import { RiFileExcel2Line } from "react-icons/ri";
 
 export default function PlayersTable() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,33 +13,52 @@ export default function PlayersTable() {
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFilterLoading, setIsFilterLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const itemsPerPage = 10;
-  
+  const [showFilter, setShowFilter] = useState(false);
+
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { players, loading, error } = useSelector(
-    (state) => state.playerSlice
-  );
+  const { players, loading, error } = useSelector((state) => state.playerSlice);
 
   useEffect(() => {
     dispatch(getPlayersAdmin());
   }, [dispatch]);
 
+  // Debounce filter changes to prevent excessive loading states
+  useEffect(() => {
+    setIsFilterLoading(true);
+    const timer = setTimeout(() => {
+      setIsFilterLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedClub, selectedCountry]);
+
   // Get unique clubs and countries
-  const clubs = ["All", ...new Set(players.map(p => p.club?.name).filter(Boolean))];
-  const countries = ["All", ...new Set(players.map(p => p.country).filter(Boolean))];
+  const clubs = [
+    "All",
+    ...new Set(players.map((p) => p.club?.name).filter(Boolean)),
+  ];
+  const countries = [
+    "All",
+    ...new Set(players.map((p) => p.country).filter(Boolean)),
+  ];
 
   // Filter players
   const filteredPlayers = players.filter((player) => {
-    const matchesSearch = 
+    const matchesSearch =
       player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.qid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       player.mobile?.includes(searchTerm);
-    
-    const matchesClub = selectedClub === "All" || player.club?.name === selectedClub;
-    const matchesCountry = selectedCountry === "All" || player.country === selectedCountry;
-    
+
+    const matchesClub =
+      selectedClub === "All" || player.club?.name === selectedClub;
+    const matchesCountry =
+      selectedCountry === "All" || player.country === selectedCountry;
+
     return matchesSearch && matchesClub && matchesCountry;
   });
 
@@ -51,206 +71,329 @@ export default function PlayersTable() {
   const handlePlayerClick = (playerId) => {
     router.push(`/players/${playerId}`);
   };
+  const handleDownloadExcel = async () => {
+    setIsDownloading(true);
+    try {
+      // Create CSV content
+      const headers = [
+        "Sl.no",
+        "Player Name",
+        "QID",
+        "Club",
+        "Country",
+        "Mobile",
+      ];
+      const csvContent = [
+        headers.join(","),
+        ...filteredPlayers.map((player, index) =>
+          [
+            index + 1,
+            `"${player.name || ""}"`,
+            `"${player.qid || ""}"`,
+            `"${player.club?.name || "N/A"}"`,
+            `"${player.country || "N/A"}"`,
+            `"${player.mobile || ""}"`,
+          ].join(",")
+        ),
+      ].join("\n");
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `players_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading Excel:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Loading skeleton component
+  const TableSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(10)].map((_, index) => (
+        <div key={index} className="animate-pulse">
+          <div className="hidden md:block">
+            <div className="flex space-x-4 px-6 py-4 border-b border-gray-200">
+              <div className="h-4 bg-gray-200 rounded w-8"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+            </div>
+          </div>
+          <div className="md:hidden bg-white rounded-lg shadow-sm p-4">
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="flex gap-4">
+                <div className="flex-1 h-4 bg-gray-200 rounded"></div>
+                <div className="flex-1 h-4 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const CardSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(5)].map((_, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-lg shadow-sm p-4 animate-pulse"
+        >
+          <div className="space-y-3">
+            <div>
+              <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </div>
+            <div>
+              <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+              <div className="flex-1">
+                <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <>
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Players
-            </h1>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-[#1e0066] hover:bg-[#1e0066] text-white font-semibold px-6 py-2.5 rounded-lg transition-all duration-300 shadow-lg "
-            >
-              CREATE PLAYER
-            </button>
-          </div>
 
-          {/* Search and Filter Section */}
-          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              {/* Search Input */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search
-                </label>
-                <div className="relative">
+          <div
+            className="rounded-2xl p-6 md:p-8 mb-6"
+            style={{
+              background:
+                "linear-gradient(277.59deg, #17057C -12.13%, #000000 115.41%)",
+            }}
+          >
+            <p className="text-white text-lg font-medium mb-4">
+              What are you looking for
+            </p>
+
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative w-full md:w-[260px]">
                   <input
                     type="text"
-                    placeholder="Search for Name, QID, Contact"
+                    placeholder="Search player name"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full text-black pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full bg-white text-black px-4 py-3 rounded-xl pl-12 outline-none"
                   />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
                 </div>
-              </div>
 
-              {/* Club Filter */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Club
-                </label>
-                <select
-                  value={selectedClub}
-                  onChange={(e) => setSelectedClub(e.target.value)}
-                  className="w-full px-4 text-black py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+                {/* Filter */}
+                <button
+                  onClick={() => setShowFilter(true)}
+                  className="bg-white px-4 py-3 rounded-xl flex items-center gap-2 text-black shadow-md"
                 >
-                  {clubs.map((club) => (
-                    <option key={club} value={club}>{club}</option>
-                  ))}
-                </select>
+                  <Filter className="w-4 h-4" />
+                  Filter
+                </button>
               </div>
 
-              {/* Country Filter */}
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Country
-                </label>
-                <select
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="w-full text-black px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white appearance-none cursor-pointer"
+              {/* Right Group: Create Player + Export */}
+              <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">
+                {/* Create Player */}
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
                 >
-                  {countries.map((country) => (
-                    <option key={country} value={country}>{country}</option>
-                  ))}
-                </select>
-              </div>
+                  + Create Player
+                </button>
 
-              {/* Filter Button */}
-              <div className="flex items-end">
-                <button className="w-full lg:w-auto px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                  <SlidersHorizontal className="w-5 h-5" />
+                {/* PDF Export with icon */}
+                <button
+                  onClick={handleDownloadExcel}
+                  className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2"
+                >
+                  <RiFileExcel2Line className="w-4 h-4" />
+                   Export
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Table Section - Desktop */}
-         {/* Table Section - Desktop */}
-<div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-  {loading ? (
-    <div className="px-6 py-12 text-center text-gray-500">
-      Loading players...
-    </div>
-  ) : error ? (
-    <div className="px-6 py-12 text-center text-red-500">{error}</div>
-  ) : (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="text-[#1a1a1a] bg-[#fafafa] border-b border-gray-200">
-            <th className="px-6 py-4 font-semibold text-sm text-left">Sl.no</th>
-            <th className="px-6 py-4 font-semibold text-sm text-left">Player name</th>
-            <th className="px-6 py-4 font-semibold text-sm text-left">QID</th>
-            <th className="px-6 py-4 font-semibold text-sm text-left">Club</th>
-            <th className="px-6 py-4 font-semibold text-sm text-left">Country</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {currentPlayers.length > 0 ? (
-            currentPlayers.map((player, index) => (
-              <tr
-                key={player._id}
-                onClick={() => handlePlayerClick(player._id)}
-                className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
-              >
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {startIndex + index + 1}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {player.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {player.qid}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {player.club?.name || "N/A"}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {player.country || "N/A"}
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="5"
-                className="px-6 py-12 text-center text-gray-500"
-              >
-                No players found matching your search criteria
-              </td>
-            </tr>
+          {/* Loading State for Initial Data Fetch */}
+          {loading && (
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1e0066] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading players data...</p>
+              </div>
+            </div>
           )}
-        </tbody>
-      </table>
-    </div>
-  )}
-</div>
 
+          {/* Table Section - Desktop */}
+          {!loading && (
+            <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+              {isFilterLoading ? (
+                <TableSkeleton />
+              ) : error ? (
+                <div className="px-6 py-12 text-center text-red-500">
+                  {error}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="text-[#1a1a1a] bg-[#fafafa] border-b border-gray-200">
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Sl.no
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Player name
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          QID
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Club
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Country
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {currentPlayers.length > 0 ? (
+                        currentPlayers.map((player, index) => (
+                          <tr
+                            key={player._id}
+                            onClick={() => handlePlayerClick(player._id)}
+                            className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                          >
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {startIndex + index + 1}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {player.name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {player.qid}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {player.club?.name || "N/A"}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">
+                              {player.country || "N/A"}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-6 py-12 text-center text-gray-500"
+                          >
+                            No players found matching your search criteria
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Card View - Mobile */}
-          <div className="md:hidden space-y-4">
-            {loading ? (
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
-                Loading players...
-              </div>
-            ) : error ? (
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center text-red-500">
-                {error}
-              </div>
-            ) : currentPlayers.length > 0 ? (
-              currentPlayers.map((player) => (
-                <div 
-                  key={player._id} 
-                  onClick={() => handlePlayerClick(player._id)}
-                  className="bg-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <div className="space-y-3">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Player name</div>
-                      <div className="text-sm font-medium text-gray-900">{player.name}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">QID</div>
-                      <div className="text-sm text-gray-700">{player.qid}</div>
-                    </div>
-                    <div className="flex gap-4">
-                      <div className="flex-1">
-                        <div className="text-xs text-gray-500 mb-1">Club</div>
-                        <div className="text-sm text-gray-700">{player.club?.name || 'N/A'}</div>
+          {!loading && (
+            <div className="md:hidden space-y-4">
+              {isFilterLoading ? (
+                <CardSkeleton />
+              ) : error ? (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center text-red-500">
+                  {error}
+                </div>
+              ) : currentPlayers.length > 0 ? (
+                currentPlayers.map((player) => (
+                  <div
+                    key={player._id}
+                    onClick={() => handlePlayerClick(player._id)}
+                    className="bg-white rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow"
+                  >
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">
+                          Player name
+                        </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {player.name}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <div className="text-xs text-gray-500 mb-1">Country</div>
-                        <div className="text-sm text-gray-700">{player.country || 'N/A'}</div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">QID</div>
+                        <div className="text-sm text-gray-700">
+                          {player.qid}
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 mb-1">Club</div>
+                          <div className="text-sm text-gray-700">
+                            {player.club?.name || "N/A"}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs text-gray-500 mb-1">
+                            Country
+                          </div>
+                          <div className="text-sm text-gray-700">
+                            {player.country || "N/A"}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
+                  No players found matching your search criteria
                 </div>
-              ))
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
-                No players found matching your search criteria
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Results Count */}
-          {!loading && (
+          {!loading && !isFilterLoading && (
             <div className="mt-4 text-gray-600 text-sm">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredPlayers.length)} of {filteredPlayers.length} players
+              Showing {startIndex + 1}-
+              {Math.min(endIndex, filteredPlayers.length)} of{" "}
+              {filteredPlayers.length} players
             </div>
           )}
 
           {/* Pagination */}
-          {!loading && totalPages > 1 && (
+          {!loading && !isFilterLoading && totalPages > 1 && (
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-4 py-3 rounded-lg shadow-sm">
-              <button 
+              <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -271,25 +414,27 @@ export default function PlayersTable() {
                   } else {
                     pageNum = currentPage - 2 + i;
                   }
-                  
+
                   return (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
                       className={`w-8 h-8 rounded-lg transition-colors ${
                         currentPage === pageNum
-                          ? 'bg-[#1e0066] text-white font-medium'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? "bg-[#1e0066] text-white font-medium"
+                          : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      {pageNum.toString().padStart(2, '0')}
+                      {pageNum.toString().padStart(2, "0")}
                     </button>
                   );
                 })}
               </div>
 
-              <button 
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              <button
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -300,6 +445,64 @@ export default function PlayersTable() {
           )}
         </div>
       </div>
+      {/* Filter Popup */}
+      {showFilter && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white w-[90%] md:w-[600px] rounded-2xl p-6 relative shadow-xl">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowFilter(false)}
+              className="absolute top-4 right-4 text-black"
+            >
+              ✕
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {/* Club */}
+              <div>
+                <label className="text-gray-700 font-medium">Club</label>
+                <select
+                  value={selectedClub}
+                  onChange={(e) => setSelectedClub(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl mt-2"
+                >
+                  {clubs.map((club) => (
+                    <option key={club}>{club}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="text-gray-700 font-medium">Country</label>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl mt-2"
+                >
+                  {countries.map((country) => (
+                    <option key={country}>{country}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* View List Button */}
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={() => setShowFilter(false)}
+                className="px-10 py-3 rounded-xl text-white font-medium"
+                style={{
+                  background:
+                    "linear-gradient(270deg, #090979 0%, #1D0A54 100%)",
+                }}
+              >
+                View List
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       <CreatePlayerModal
