@@ -1,5 +1,5 @@
 import { createTournament } from "@/redux/slice/tournamentSlice";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
@@ -19,6 +19,8 @@ function CreateTournamentModal({ isOpen, onClose }) {
 
   const [fileName, setFileName] = useState("");
   const [formErrors, setFormErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -36,34 +38,37 @@ function CreateTournamentModal({ isOpen, onClose }) {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      const validTypes = [".xlsx", ".xls", ".csv"];
-      const fileExtension = file.name
-        .toLowerCase()
-        .slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2);
+  const validateFile = (file) => {
+    // Validate file type
+    const validTypes = [".xlsx", ".xls", ".csv"];
+    const fileExtension = file.name
+      .toLowerCase()
+      .slice(((file.name.lastIndexOf(".") - 1) >>> 0) + 2);
 
-      if (!validTypes.includes("." + fileExtension)) {
-        toast.error("Please upload only Excel files (.xlsx, .xls, .csv)");
-        setFormErrors((prev) => ({
-          ...prev,
-          file: "Please upload only Excel files (.xlsx, .xls, .csv)",
-        }));
-        return;
-      }
+    if (!validTypes.includes("." + fileExtension)) {
+      toast.error("Please upload only Excel files (.xlsx, .xls, .csv)");
+      setFormErrors((prev) => ({
+        ...prev,
+        file: "Please upload only Excel files (.xlsx, .xls, .csv)",
+      }));
+      return false;
+    }
 
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size should be less than 5MB");
-        setFormErrors((prev) => ({
-          ...prev,
-          file: "File size should be less than 5MB",
-        }));
-        return;
-      }
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size should be less than 5MB");
+      setFormErrors((prev) => ({
+        ...prev,
+        file: "File size should be less than 5MB",
+      }));
+      return false;
+    }
 
+    return true;
+  };
+
+  const handleFileSelect = (file) => {
+    if (file && validateFile(file)) {
       setFormData((prev) => ({
         ...prev,
         file: file,
@@ -77,7 +82,42 @@ function CreateTournamentModal({ isOpen, onClose }) {
           file: "",
         }));
       }
+
+      toast.success("File selected successfully!");
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragAreaClick = () => {
+    fileInputRef.current?.click();
   };
 
   const validateForm = () => {
@@ -111,6 +151,8 @@ function CreateTournamentModal({ isOpen, onClose }) {
       return;
     }
 
+    const loadingToast = toast.loading("Creating tournament...");
+
     try {
       // Create FormData object to handle file upload
       const submitData = new FormData();
@@ -123,13 +165,9 @@ function CreateTournamentModal({ isOpen, onClose }) {
         submitData.append("file", formData.file);
       }
 
-      // Log FormData contents for debugging
-      for (let [key, value] of submitData.entries()) {
-        console.log(`${key}:`, value);
-      }
-
       const result = await dispatch(createTournament(submitData)).unwrap();
 
+      toast.dismiss(loadingToast);
       toast.success("Tournament created successfully!");
 
       // Reset form and close modal
@@ -137,7 +175,23 @@ function CreateTournamentModal({ isOpen, onClose }) {
       onClose();
     } catch (error) {
       console.error("Failed to create tournament:", error);
-      toast.error(error || "Failed to create tournament");
+      toast.dismiss(loadingToast);
+
+      // Handle the specific error response structure
+      if (
+        error?.message === "File already exists" &&
+        error?.errors?.length > 0
+      ) {
+        // Show the specific file error message from the response
+        const fileError = error.errors.find((err) => err.field === "file");
+        if (fileError) {
+          toast.error(fileError.message);
+        } else {
+          toast.error(error.message || "File already exists");
+        }
+      } else {
+        toast.error(error || "Failed to create tournament");
+      }
     }
   };
 
@@ -151,6 +205,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
     });
     setFileName("");
     setFormErrors({});
+    setIsDragging(false);
   };
 
   const handleClose = () => {
@@ -168,9 +223,11 @@ function CreateTournamentModal({ isOpen, onClose }) {
       ...prev,
       file: "",
     }));
+    toast.success("File removed");
   };
 
   if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -186,7 +243,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
           <button
             onClick={handleClose}
             disabled={createLoading}
-            className="p-2 rounded-full hover:bg-white/20 transition"
+            className="p-2 rounded-full hover:bg-white/20 transition disabled:opacity-50"
           >
             <svg
               className="w-7 h-7"
@@ -221,6 +278,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
                     formErrors.name ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Enter tournament name"
+                  disabled={createLoading}
                 />
                 {formErrors.name && (
                   <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
@@ -238,6 +296,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
                     formErrors.location ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder="Enter tournament location"
+                  disabled={createLoading}
                 />
                 {formErrors.location && (
                   <p className="text-red-500 text-sm mt-1">
@@ -267,6 +326,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
+                      disabled={createLoading}
                     />
                   </div>
 
@@ -285,6 +345,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
                           ? "border-red-500"
                           : "border-gray-300"
                       }`}
+                      disabled={createLoading}
                     />
                   </div>
                 </div>
@@ -305,9 +366,23 @@ function CreateTournamentModal({ isOpen, onClose }) {
                   </label>
 
                   {!fileName ? (
-                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer hover:bg-gray-100">
+                    <label
+                      className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl h-40 cursor-pointer transition-colors ${
+                        isDragging
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-300 hover:bg-gray-100"
+                      } ${
+                        createLoading ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={handleDragAreaClick}
+                    >
                       <svg
-                        className="w-12 h-12 text-gray-400 mb-3"
+                        className={`w-12 h-12 mb-3 ${
+                          isDragging ? "text-blue-500" : "text-gray-400"
+                        }`}
                         fill="none"
                         viewBox="0 0 20 16"
                       >
@@ -317,17 +392,26 @@ function CreateTournamentModal({ isOpen, onClose }) {
                           d="M13 13h3a3 3 0 000-6h-.025A5.56 5.56 0 0016 6.5 5.5 5.5 0 005.207 5.021 4 4 0 005 5a4 4 0 000 8h2.167M10 15V6m0 0L8 8m2-2l2 2"
                         />
                       </svg>
-                      <p className="text-gray-600 text-sm">
-                        Click to upload or drag and drop
+                      <p
+                        className={`text-sm ${
+                          isDragging ? "text-blue-500" : "text-gray-600"
+                        }`}
+                      >
+                        {isDragging
+                          ? "Drop file here"
+                          : "Click to upload or drag and drop"}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 mt-1">
                         Excel files only (.xlsx, .xls, .csv) — Max 5MB
                       </p>
 
                       <input
+                        ref={fileInputRef}
                         type="file"
                         className="hidden"
                         onChange={handleFileChange}
+                        accept=".xlsx,.xls,.csv"
+                        disabled={createLoading}
                       />
                     </label>
                   ) : (
@@ -339,7 +423,8 @@ function CreateTournamentModal({ isOpen, onClose }) {
                       <button
                         type="button"
                         onClick={removeFile}
-                        className="flex-shrink-0 text-red-500 hover:text-red-700"
+                        disabled={createLoading}
+                        className="flex-shrink-0 text-red-500 hover:text-red-700 disabled:opacity-50"
                       >
                         ✕
                       </button>
@@ -360,16 +445,44 @@ function CreateTournamentModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-100"
+                disabled={createLoading}
+                className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#1e0066] to-[#3b2b91] text-white font-semibold hover:opacity-90"
+                disabled={createLoading}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#1e0066] to-[#3b2b91] text-white font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Create Tournament
+                {createLoading ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Creating...
+                  </>
+                ) : (
+                  "Create Tournament"
+                )}
               </button>
             </div>
           </form>

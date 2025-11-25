@@ -146,11 +146,17 @@ export default function ClubsTable() {
 
             <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">
               <button
+                onClick={() => setIsModalOpen(true)}
+                className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
+              >
+               + CREATE CLUB
+              </button>
+              <button
                 onClick={exportToExcel}
                 className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
               >
                 <RiFileExcel2Line className="w-4 h-4" />
-                 Export
+                Export
               </button>
             </div>
           </div>

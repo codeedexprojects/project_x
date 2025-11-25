@@ -68,10 +68,10 @@ export default function UmpiresTable() {
         <div className="max-w-7xl mx-auto">
           <div
             className="rounded-2xl p-6 md:p-8 mb-6"
-             style={{
-            background:
-              "linear-gradient(277.59deg, #17057C -12.13%, #000000 115.41%)",
-          }}
+            style={{
+              background:
+                "linear-gradient(277.59deg, #17057C -12.13%, #000000 115.41%)",
+            }}
           >
             <p className="text-white text-lg font-medium mb-4">
               What are you looking for
@@ -92,6 +92,12 @@ export default function UmpiresTable() {
 
               {/* RIGHT — Two Dropdown Filters */}
               <div className="flex items-center gap-3 w-full md:w-auto">
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
+                >
+                  + CREATE UMPIRE
+                </button>
                 {/* Gender Filter */}
                 <select
                   value={selectedGender}
