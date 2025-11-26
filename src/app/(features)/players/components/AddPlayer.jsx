@@ -5,9 +5,8 @@ import { X } from 'lucide-react';
 
 export default function CreatePlayerModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
-  // Assuming you have a players slice in your Redux store
   const { createLoading, createError } = useSelector(
-    (state) => state.playersSlice || {}
+    (state) => state.playerSlice || {}
   );
 
   const [formData, setFormData] = useState({

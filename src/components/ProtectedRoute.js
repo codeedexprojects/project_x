@@ -1,46 +1,75 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import Header from './Header';
 
-export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, isLoading, admin, checkTokenValidity } = useAuth();
+export default function ProtectedLayout({ children }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const pathname = usePathname();
   const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(!isLoading);
+  const hasChecked = useRef(false);
+
+  // Public routes that don't need authentication
+  const publicRoutes = ['/login', '/unauthorized'];
+  const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
-    if (!isLoading) {
-      const isValid = checkTokenValidity();
+    if (isLoading) return;
+
+    if (!hasChecked.current) {
+      hasChecked.current = true;
       
-      if (!isValid || !isAuthenticated) {
+      if (!isAuthenticated && !isPublicRoute) {
+        // Not authenticated and trying to access protected route
         router.push('/login');
-        return;
+      } else if (isAuthenticated && pathname === '/login') {
+        // Authenticated but on login page - redirect to home
+        router.push('/');
       }
-
-      if (requireAdmin && (!admin || admin.role !== 'admin')) {
-        router.push('/unauthorized');
-        return;
-      }
+      
+      setIsCheckingAuth(false);
     }
-  }, [isAuthenticated, isLoading, admin, requireAdmin, router, checkTokenValidity]);
+  }, [isLoading, isAuthenticated, isPublicRoute, pathname, router]);
 
-  if (isLoading) {
+  // Token expiration handler
+  useEffect(() => {
+    const handleTokenExpired = () => {
+      hasChecked.current = false;
+      router.push('/login');
+    };
+
+    window.addEventListener('tokenExpired', handleTokenExpired);
+    return () => window.removeEventListener('tokenExpired', handleTokenExpired);
+  }, [router]);
+
+  // Show loading while checking auth
+  if (isLoading || isCheckingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return null; 
+  // Only show header for authenticated users on protected routes
+  if (isAuthenticated && !isPublicRoute) {
+    return (
+      <>
+        <main>{children}</main>
+      </>
+    );
   }
 
-  if (requireAdmin && (!admin || admin.role !== 'admin')) {
-    return null; 
+  // Show only content for public routes (login page)
+  if (isPublicRoute) {
+    return <main>{children}</main>;
   }
 
-  return children;
+  // Not authenticated and not on public route
+  return null;
 }

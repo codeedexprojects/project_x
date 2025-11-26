@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { logoutAdmin } from "@/redux/slice/adminAuth";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -10,10 +10,8 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const { isAuthenticated, logout: authLogout } = useAuth();
+  const { logout: authLogout, admin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const { user } = useSelector((state) => state.adminAuth);
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -37,16 +35,16 @@ export default function Header() {
     setIsMenuOpen(false);
   };
 
+  // Handle token expiration
   useEffect(() => {
     const handleTokenExpired = () => {
       dispatch(logoutAdmin());
       authLogout();
-      router.push("/login");
     };
 
     window.addEventListener("tokenExpired", handleTokenExpired);
     return () => window.removeEventListener("tokenExpired", handleTokenExpired);
-  }, [dispatch, authLogout, router]);
+  }, [dispatch, authLogout]);
 
   return (
     <header className="w-full bg-[#000] backdrop-blur-md border-b border-white/10">
@@ -63,50 +61,38 @@ export default function Header() {
           <h1 className="text-white text-xl font-semibold">ShuttleDesk BQAB</h1>
         </div>
 
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2">
           {navLinks.map((link) => (
             <button
-  key={link.name}
-  onClick={() => goTo(link.path)}
-  className={`relative px-5 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
-    isActive(link.path)
-      ? "text-white relative after:absolute after:left-0 after:bottom-0 after:h-[1.5px] after:w-full after:bg-white before:absolute before:left-0 before:bottom-0 before:w-full before:h-full before:bg-[linear-gradient(0deg,rgba(23,5,124,0.8)_0%,rgba(16,16,16,0)_60%)] before:backdrop-blur-[4px] before:z-[-1]"
-      : "text-white hover:bg-white/10"
-  }`}
->
-  {link.name}
-</button>
-
+              key={link.name}
+              onClick={() => goTo(link.path)}
+              className={`relative px-5 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                isActive(link.path)
+                  ? "text-white relative after:absolute after:left-0 after:bottom-0 after:h-[1.5px] after:w-full after:bg-white before:absolute before:left-0 before:bottom-0 before:w-full before:h-full before:bg-[linear-gradient(0deg,rgba(23,5,124,0.8)_0%,rgba(16,16,16,0)_60%)] before:backdrop-blur-[4px] before:z-[-1]"
+                  : "text-white hover:bg-white/10"
+              }`}
+            >
+              {link.name}
+            </button>
           ))}
 
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3 ml-3">
-              {user && (
-                <div className="flex items-center gap-2 text-white">
-                  <User size={16} />
-                  <span className="text-sm">{user.name || user.email}</span>
-                </div>
-              )}
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 rounded-md text-white 
-            bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]"
-              >
-                Logout
-              </button>
-            </div>
-          ) : (
+          {/* User info and logout */}
+          <div className="flex items-center gap-3 ml-3 pl-3 border-l border-white/20">
+           
             <button
-              onClick={() => goTo("/login")}
-              className="ml-3 px-6 py-2 rounded-md text-white font-medium 
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-white 
               bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]
               hover:opacity-90 transition"
             >
-              Login
+              <LogOut size={16} />
+              Logout
             </button>
-          )}
+          </div>
         </div>
 
+        {/* Mobile Menu Button */}
         <button
           className="md:hidden text-white p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -115,6 +101,7 @@ export default function Header() {
         </button>
       </nav>
 
+      {/* Mobile Navigation */}
       {isMenuOpen && (
         <div className="md:hidden bg-[#1a1a1a]/90 backdrop-blur-md border-t border-white/10 p-4 space-y-2">
           {navLinks.map((link) => (
@@ -133,32 +120,18 @@ export default function Header() {
             </button>
           ))}
 
-          {isAuthenticated ? (
-            <div className="pt-2 border-t border-white/20">
-              {user && (
-                <div className="flex items-center gap-2 px-4 py-2 text-white text-sm">
-                  <User size={16} />
-                  <span>{user.name || user.email}</span>
-                </div>
-              )}
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 rounded-md text-white 
-            bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]"
-              >
-                <LogOut size={16} />
-                Logout
-              </button>
-            </div>
-          ) : (
+          {/* User info and logout - Mobile */}
+          <div className="pt-2 border-t border-white/20 space-y-2">
             <button
-              onClick={() => goTo("/login")}
-              className="block w-full text-left px-4 py-2 rounded-md text-white 
-              bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]"
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full text-left px-4 py-2 rounded-md text-white 
+              bg-[linear-gradient(277.59deg,#17057C_-12.13%,#000000_115.41%)]
+              hover:opacity-90 transition"
             >
-              Login
+              <LogOut size={16} />
+              Logout
             </button>
-          )}
+          </div>
         </div>
       )}
     </header>

@@ -39,7 +39,6 @@ export default function PlayerProfile({
   const editableFields = [
     { key: "name", label: "Name", type: "text", required: true },
     { key: "email", label: "Email", type: "email", required: false },
-    { key: "qid", label: "Player ID", type: "text", required: true },
     { key: "mobile", label: "Mobile Number", type: "tel", required: false },
     {
       key: "gender",
@@ -100,20 +99,20 @@ export default function PlayerProfile({
     );
   };
 
-  const renderDisplayField = (key, value) => {
-    const label = key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (str) => str.toUpperCase());
-    return (
-      <div key={key}>
-        <label className="text-xs text-gray-500 block mb-1 font-medium">
-          {label}
-        </label>
-        <div className="text-sm text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-          {value || "N/A"}
-        </div>
-      </div>
-    );
+  const getDisplayValue = (fieldKey) => {
+    const fieldMapping = {
+      qid: "playerId",
+      mobile: "mobileNumber", 
+      country: "nationality",
+      dob: "dob",
+      passport: "passport",
+      email: "email",
+      gender: "gender",
+      club: "club"
+    };
+
+    const playerDataKey = fieldMapping[fieldKey] || fieldKey;
+    return playerData[playerDataKey] || "N/A";
   };
 
   return (
@@ -213,7 +212,7 @@ export default function PlayerProfile({
                       {playerData.name}
                     </h2>
                     <p className="text-sm text-gray-500">
-                      Player ID: {playerData.playerId}
+                      QID: {playerData.playerId}
                     </p>
                   </div>
                 )}
@@ -235,16 +234,22 @@ export default function PlayerProfile({
                         renderEditableField(field)
                       ) : (
                         <div className="text-sm text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                          {playerData[field.key] || "N/A"}
+                          {getDisplayValue(field.key)}
                         </div>
                       )}
                     </div>
                   );
                 })}
 
-                {["address"].map((key) =>
-                  renderDisplayField(key, playerData[key])
-                )}
+                {/* Address field - always in display mode */}
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1 font-medium">
+                    Address
+                  </label>
+                  <div className="text-sm text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                    {playerData.address || "N/A"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

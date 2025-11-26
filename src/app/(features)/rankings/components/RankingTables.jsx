@@ -88,14 +88,12 @@ const LeaderboardTable = () => {
       const userQid = player.user?.qid?.toLowerCase() || "";
       const partnerName = player.partner?.name?.toLowerCase() || "";
       const partnerQid = player.partner?.qid?.toLowerCase() || "";
-      const memberId = player.memberId?.toLowerCase() || "";
 
       return (
         userName.includes(searchTerm.toLowerCase()) ||
         userQid.includes(searchTerm.toLowerCase()) ||
         partnerName.includes(searchTerm.toLowerCase()) ||
-        partnerQid.includes(searchTerm.toLowerCase()) ||
-        memberId.includes(searchTerm.toLowerCase())
+        partnerQid.includes(searchTerm.toLowerCase()) 
       );
     }) || [];
 
@@ -158,9 +156,7 @@ const LeaderboardTable = () => {
           <div className="text-sm text-gray-600">
             QID: {player.user?.qid || "N/A"}
           </div>
-          <div className="text-xs text-gray-500">
-            Member ID: {player.memberId || "N/A"}
-          </div>
+          
         </div>
 
         {showPartner && isDoubles && player.partner && (
@@ -250,7 +246,7 @@ const LeaderboardTable = () => {
               <div className="relative w-full md:w-[260px]">
                 <input
                   type="text"
-                  placeholder="Search Name, QID, Member ID"
+                  placeholder="Search Name, QID"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-white text-black px-4 py-3 rounded-xl pl-12 outline-none"
@@ -264,7 +260,6 @@ const LeaderboardTable = () => {
                 disabled={!tournaments || tournaments.length === 0}
                 className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[180px]"
               >
-                <option value="">Tournament</option>
                 {tournaments &&
                   tournaments.map((t) => (
                     <option key={t._id} value={t._id}>
@@ -279,7 +274,6 @@ const LeaderboardTable = () => {
                 disabled={!categories || categories.length === 0}
                 className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[180px]"
               >
-                <option value="">Category</option>
                 {categories &&
                   categories.map((c) => (
                     <option key={c._id} value={c._id}>
@@ -356,9 +350,9 @@ const LeaderboardTable = () => {
                         <th className="px-6 py-4 font-semibold text-sm text-left">
                           Player Information
                         </th>
-                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                        {/* <th className="px-6 py-4 font-semibold text-sm text-left">
                           Partner Information
-                        </th>
+                        </th> */}
                         {/* <th className="px-6 py-4 font-semibold text-sm text-left">Position</th> */}
                         <th className="px-6 py-4 font-semibold text-sm text-left">
                           Points
@@ -381,7 +375,7 @@ const LeaderboardTable = () => {
                             <td className="px-6 py-4">
                               <PlayerInfo player={player} showPartner={false} />
                             </td>
-                            <td className="px-6 py-4">
+                            {/* <td className="px-6 py-4">
                               {player.partner ? (
                                 <div className="space-y-1">
                                   <div className="font-medium text-gray-900">
@@ -396,7 +390,7 @@ const LeaderboardTable = () => {
                                   No Partner
                                 </span>
                               )}
-                            </td>
+                            </td> */}
                             {/* <td className="px-6 py-4">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                               {player.position}

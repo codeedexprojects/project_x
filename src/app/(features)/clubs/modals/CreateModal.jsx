@@ -124,9 +124,7 @@ export default function AddClubModal({ isOpen, onClose }) {
     clubData.mobileNumbers.forEach((num, idx) => {
       if (!num.trim()) {
         errors[`mobile_${idx}`] = 'Mobile number is required';
-      } else if (!/^\d{10}$/.test(num.trim())) {
-        errors[`mobile_${idx}`] = 'Please enter a valid 10-digit mobile number';
-      }
+      } 
     });
     
     setFormErrors(errors);
@@ -387,7 +385,7 @@ export default function AddClubModal({ isOpen, onClose }) {
                         className={`flex-1 border rounded-lg px-4 py-3 text-black ${
                           formErrors[`mobile_${idx}`] ? 'border-red-500' : 'border-gray-300'
                         }`}
-                        placeholder="Enter 10-digit mobile number"
+                        placeholder="Enter a mobile number"
                         maxLength="10"
                       />
                       {clubData.mobileNumbers.length > 1 && (
