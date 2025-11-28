@@ -188,44 +188,42 @@ export default function PlayerProfilePage() {
       // Create FormData to handle file upload
       const formDataToSend = new FormData();
 
-      // Append all fields with proper validation
-      formDataToSend.append("name", formData.name.trim());
-      formDataToSend.append("email", formData.email?.trim() || "");
-      formDataToSend.append("qid", formData.qid.trim());
-      formDataToSend.append("mobile", formData.mobile?.trim() || "");
+      // Only append fields that have changed
+      Object.keys(formData).forEach((key) => {
+        if (formData[key] !== originalData[key]) {
+          const value = formData[key]?.trim() || "";
 
-      // Only append gender if it has a value (not empty string)
-      if (formData.gender && formData.gender.trim()) {
-        formDataToSend.append("gender", formData.gender.trim());
+          // Skip empty values for optional fields (except when explicitly setting to empty)
+          if (value === "" && ["gender", "club", "level"].includes(key)) {
+            // For these fields, don't send empty values
+            return;
+          }
+
+          formDataToSend.append(key, value);
+          console.log(
+            `Field changed: ${key} from "${originalData[key]}" to "${formData[key]}"`
+          );
+        }
+      });
+
+      // Special handling for boolean fields
+      if (formData.isActive !== originalData.isActive) {
+        formDataToSend.append("isActive", formData.isActive);
       }
-
-      formDataToSend.append("country", formData.country?.trim() || "");
-
-      // Only append club if it has a valid value (not empty string)
-      if (formData.club && formData.club.trim()) {
-        formDataToSend.append("club", formData.club.trim());
-      }
-
-      formDataToSend.append("dob", formData.dob || "");
-      formDataToSend.append("passport", formData.passport?.trim() || "");
-
-      // Only append level if it has a value (not empty string)
-      if (formData.level && formData.level.trim()) {
-        formDataToSend.append("level", formData.level.trim());
-      }
-
-      formDataToSend.append("role", formData.role?.trim() || "player");
-      formDataToSend.append(
-        "isActive",
-        formData.isActive !== undefined ? formData.isActive : true
-      );
 
       // Append image file if selected
       if (imageFile) {
         formDataToSend.append("image", imageFile);
       }
 
-      console.log("Dispatching update with form data");
+      // If no fields changed and no new image, show message and return
+      if (formDataToSend.entries().next().done && !imageFile) {
+        toast.error("No changes detected");
+        setIsEditing(false);
+        return;
+      }
+
+      console.log("Dispatching update with only changed fields");
 
       // Call the thunk with correct parameter structure
       const result = await dispatch(

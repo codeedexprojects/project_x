@@ -118,7 +118,6 @@ export default function AddClubModal({ isOpen, onClose }) {
     if (!clubData.state.trim()) errors.state = 'State is required';
     if (!clubData.zipCode.trim()) errors.zipCode = 'Zip code is required';
     if (!clubData.country.trim()) errors.country = 'Country is required';
-    if (!logoFile) errors.logo = 'Club logo is required';
     
     // Validate mobile numbers
     clubData.mobileNumbers.forEach((num, idx) => {
@@ -233,7 +232,7 @@ export default function AddClubModal({ isOpen, onClose }) {
 
                 {/* Club Logo */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium mb-2">Club Logo *</label>
+                  <label className="block text-sm font-medium mb-2">Club Logo </label>
                   {!logoPreview ? (
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl h-40 cursor-pointer hover:bg-gray-100 transition">
                       <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" viewBox="0 0 20 16">

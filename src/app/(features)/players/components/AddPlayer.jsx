@@ -1,26 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { X } from 'lucide-react';
+import { createUser } from "@/redux/slice/playersSlice";
+import { getClubs } from "@/redux/slice/clubSlice";
 
 export default function CreatePlayerModal({ isOpen, onClose }) {
   const dispatch = useDispatch();
   const { createLoading, createError } = useSelector(
     (state) => state.playerSlice || {}
   );
+  
+  const { clubs } = useSelector((state) => state.clubs || {});
 
   const [formData, setFormData] = useState({
     name: "",
     qid: "",
     club: "",
     country: "",
-    dateOfBirth: "",
+    dob: "",
     gender: "",
     mobile: "",
-    level: ""
+    email: "",
   });
 
   const [formErrors, setFormErrors] = useState({});
+
+  // Fetch clubs when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(getClubs());
+    }
+  }, [isOpen, dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -43,31 +54,32 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
 
     if (!formData.name.trim()) errors.name = "Player name is required";
     if (!formData.qid.trim()) errors.qid = "QID is required";
-    if (!formData.club.trim()) errors.club = "Club is required";
+    if (!formData.club) errors.club = "Club is required";
     if (!formData.country.trim()) errors.country = "Country is required";
-    if (!formData.dateOfBirth) errors.dateOfBirth = "Date of birth is required";
+    if (!formData.dob) errors.dob = "Date of birth is required";
     if (!formData.gender) errors.gender = "Gender is required";
     if (!formData.mobile.trim()) errors.mobile = "Mobile number is required";
+    if (!formData.email.trim()) errors.email = "Email is required";
 
-    // Mobile number validation
-    if (formData.mobile.trim() && !/^\d{8,15}$/.test(formData.mobile.trim())) {
-      errors.mobile = "Please enter a valid mobile number";
+    // Email validation
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Please enter a valid email address";
     }
 
     // Date validation - ensure player is at least 5 years old
-    if (formData.dateOfBirth) {
-      const birthDate = new Date(formData.dateOfBirth);
+    if (formData.dob) {
+      const birthDate = new Date(formData.dob);
       const today = new Date();
       const minDate = new Date();
-      minDate.setFullYear(today.getFullYear() - 100); // Max 100 years old
+      minDate.setFullYear(today.getFullYear() - 100); 
       const maxDate = new Date();
-      maxDate.setFullYear(today.getFullYear() - 5); // At least 5 years old
+      maxDate.setFullYear(today.getFullYear() - 5); 
 
       if (birthDate > maxDate) {
-        errors.dateOfBirth = "Player must be at least 5 years old";
+        errors.dob = "Player must be at least 5 years old";
       }
       if (birthDate < minDate) {
-        errors.dateOfBirth = "Please enter a valid date of birth";
+        errors.dob = "Please enter a valid date of birth";
       }
     }
 
@@ -84,20 +96,38 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
     }
 
     try {
-      // Here you would dispatch your createPlayer action
-      // const result = await dispatch(createPlayer(formData)).unwrap();
+      // Prepare data for backend - explicitly define each field to avoid sending level
+      const submitData = {
+        name: formData.name.trim(),
+        qid: formData.qid.trim(),
+        club: formData.club, // This should be the club ObjectId
+        country: formData.country.trim(),
+        dob: new Date(formData.dob).toISOString(),
+        gender: formData.gender,
+        mobile: formData.mobile.trim(),
+        email: formData.email.trim().toLowerCase(),
+        // level is intentionally excluded
+      };
 
-      // For now, we'll just log and show success
-      console.log('Player data to submit:', formData);
+      console.log('Submitting data:', submitData); // For debugging
+
+      const result = await dispatch(createUser(submitData)).unwrap();
       
       toast.success("Player created successfully!");
-
-      // Reset form and close modal
       resetForm();
       onClose();
     } catch (error) {
       console.error("Failed to create player:", error);
-      toast.error(error?.message || "Failed to create player");
+      
+      // Enhanced error handling for validation errors
+      if (error?.errors) {
+        // Handle multiple validation errors from backend
+        error.errors.forEach(err => {
+          toast.error(`${err.field}: ${err.message}`, { duration: 5000 });
+        });
+      } else {
+        toast.error(error?.message || "Failed to create player");
+      }
     }
   };
 
@@ -107,10 +137,10 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
       qid: "",
       club: "",
       country: "",
-      dateOfBirth: "",
+      dob: "",
       gender: "",
       mobile: "",
-      level: ""
+      email: "",
     });
     setFormErrors({});
   };
@@ -207,11 +237,11 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
                     } focus:outline-none focus:ring-2 focus:ring-[#1e0066]/20 focus:border-[#1e0066] appearance-none cursor-pointer`}
                   >
                     <option value="">Select club</option>
-                    <option value="Al Sadd SC">Al Sadd SC</option>
-                    <option value="Al Duhail SC">Al Duhail SC</option>
-                    <option value="Al Rayyan SC">Al Rayyan SC</option>
-                    <option value="Qatar SC">Qatar SC</option>
-                    <option value="Other">Other</option>
+                    {clubs?.map((club) => (
+                      <option key={club._id} value={club._id}>
+                        {club.name}
+                      </option>
+                    ))}
                   </select>
                   {formErrors.club && (
                     <p className="text-red-500 text-sm mt-1">{formErrors.club}</p>
@@ -252,15 +282,15 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
                   </label>
                   <input
                     type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
+                    name="dob"
+                    value={formData.dob}
                     onChange={handleInputChange}
                     className={`w-full border rounded-lg px-4 py-3 text-gray-800 ${
-                      formErrors.dateOfBirth ? "border-red-500" : "border-gray-300"
+                      formErrors.dob ? "border-red-500" : "border-gray-300"
                     } focus:outline-none focus:ring-2 focus:ring-[#1e0066]/20 focus:border-[#1e0066]`}
                   />
-                  {formErrors.dateOfBirth && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.dateOfBirth}</p>
+                  {formErrors.dob && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.dob}</p>
                   )}
                 </div>
 
@@ -280,6 +310,7 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
+                    <option value="other">Other</option>
                   </select>
                   {formErrors.gender && (
                     <p className="text-red-500 text-sm mt-1">{formErrors.gender}</p>
@@ -306,34 +337,28 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
                   )}
                 </div>
 
-                {/* Level */}
+                {/* Email */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium mb-2 text-gray-700">
-                    Level 
+                    Email *
                   </label>
-                  <select
-                    name="level"
-                    value={formData.level}
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full border rounded-lg px-4 py-3 text-gray-800 ${
-                      formErrors.level ? "border-red-500" : "border-gray-300"
-                    } focus:outline-none focus:ring-2 focus:ring-[#1e0066]/20 focus:border-[#1e0066] appearance-none cursor-pointer`}
-                  >
-                    <option value="a">A</option>
-                    <option value="b">B</option>
-                    <option value="c">C</option>
-                    <option value="d">D</option>
-                    <option value="e">E</option>
-
-                  </select>
-                  {formErrors.level && (
-                    <p className="text-red-500 text-sm mt-1">{formErrors.level}</p>
+                    className={`w-full border rounded-lg px-4 py-3 text-gray-800 placeholder-gray-500 ${
+                      formErrors.email ? "border-red-500" : "border-gray-300"
+                    } focus:outline-none focus:ring-2 focus:ring-[#1e0066]/20 focus:border-[#1e0066]`}
+                    placeholder="Enter player email"
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
               <button
                 type="button"

@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUniversalRankings } from "@/redux/slice/rankingSlice";
-import { getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
 import { getCategories } from "@/redux/slice/categorySlice";
 
 const LeaderboardTable = () => {
@@ -19,62 +18,43 @@ const LeaderboardTable = () => {
     (state) => state.rankings
   );
 
-  const { tournaments } = useSelector((state) => state.tournamentsSlice);
   const { category: categories } = useSelector((state) => state.category);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTournament, setSelectedTournament] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
-    dispatch(getTournamentsAdmin());
     dispatch(getCategories());
   }, [dispatch]);
 
   useEffect(() => {
-    if (
-      !hasInitialized &&
-      tournaments &&
-      tournaments.length > 0 &&
-      categories &&
-      categories.length > 0
-    ) {
-      const firstTournament = tournaments[0];
-      setSelectedTournament(firstTournament._id);
+    if (!hasInitialized && categories && categories.length > 0) {
       const firstCategory = categories[0];
       setSelectedCategory(firstCategory._id);
-
       setHasInitialized(true);
     }
-  }, [tournaments, categories, hasInitialized]);
+  }, [categories, hasInitialized]);
 
   useEffect(() => {
-    if (selectedTournament && selectedCategory) {
+    if (selectedCategory) {
       dispatch(
         getUniversalRankings({
-          tournamentId: selectedTournament,
           categoryId: selectedCategory,
         })
       );
     }
-  }, [dispatch, selectedTournament, selectedCategory]);
+  }, [dispatch, selectedCategory]);
 
   const handleSearch = () => {
-    if (selectedTournament && selectedCategory) {
+    if (selectedCategory) {
       dispatch(
         getUniversalRankings({
-          tournamentId: selectedTournament,
           categoryId: selectedCategory,
         })
       );
     }
-  };
-
-  const handleTournamentChange = (tournamentId) => {
-    setSelectedTournament(tournamentId);
-    setCurrentPage(1);
   };
 
   const handleCategoryChange = (categoryId) => {
@@ -82,26 +62,22 @@ const LeaderboardTable = () => {
     setCurrentPage(1);
   };
 
-  const filteredPlayers =
-    currentRanking?.players?.filter((player) => {
-      const userName = player.user?.name?.toLowerCase() || "";
-      const userQid = player.user?.qid?.toLowerCase() || "";
-      const partnerName = player.partner?.name?.toLowerCase() || "";
-      const partnerQid = player.partner?.qid?.toLowerCase() || "";
-
-      return (
-        userName.includes(searchTerm.toLowerCase()) ||
-        userQid.includes(searchTerm.toLowerCase()) ||
-        partnerName.includes(searchTerm.toLowerCase()) ||
-        partnerQid.includes(searchTerm.toLowerCase()) 
-      );
-    }) || [];
+  // Filter users based on search term
+  const filteredUsers = currentRanking?.users?.filter((user) => {
+    const userName = user?.name?.toLowerCase() || "";
+    const userQid = user?.qid?.toLowerCase() || "";
+    
+    return (
+      userName.includes(searchTerm.toLowerCase()) ||
+      userQid.includes(searchTerm.toLowerCase())
+    );
+  }) || [];
 
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentPlayers = filteredPlayers.slice(startIndex, endIndex);
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
   const MedalIcon = ({ rank }) => {
     if (rank === 1) {
@@ -144,60 +120,48 @@ const LeaderboardTable = () => {
     );
   };
 
-  const PlayerInfo = ({ player, showPartner = true }) => {
-    const isDoubles = player.categoryType === "doubles";
-
+  const UserInfo = ({ user }) => {
     return (
-      <div className="space-y-2">
-        <div className="space-y-1">
-          <div className="font-medium text-gray-900">
-            {player.user?.name || "Unknown Player"}
-          </div>
-          <div className="text-sm text-gray-600">
-            QID: {player.user?.qid || "N/A"}
-          </div>
-          
+      <div className="space-y-1">
+        <div className="font-medium text-gray-900">
+          {user?.name || "Unknown Player"}
         </div>
-
-        {showPartner && isDoubles && player.partner && (
-          <div className="border-t pt-2 mt-2">
-            <div className="text-xs font-medium text-gray-700 mb-1">
-              Partner:
-            </div>
-            <div className="text-sm text-gray-600">{player.partner.name}</div>
-            <div className="text-xs text-gray-500">
-              QID: {player.partner.qid}
-            </div>
+        <div className="text-sm text-gray-600">
+          QID: {user?.qid || "N/A"}
+        </div>
+        {user?.club?.name && (
+          <div className="text-xs text-gray-500">
+            Club: {user.club.name}
           </div>
         )}
       </div>
     );
   };
 
-  const MobilePlayerCard = ({ player }) => {
-    const isDoubles = player.categoryType === "doubles";
-
+  const MobileUserCard = ({ user }) => {
     return (
       <div className="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
         <div className="space-y-3">
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
-              <MedalIcon rank={player.rank} />
+              <MedalIcon rank={user.rank} />
             </div>
             <div className="flex-1 min-w-0">
-              <PlayerInfo player={player} showPartner={true} />
+              <UserInfo user={user} />
 
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-1 text-gray-700">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">{player.points} Points</span>
+                  <span className="font-semibold">{user.points} Points</span>
                 </div>
 
-                {isDoubles && (
-                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    Position: {player.position}
-                  </div>
-                )}
+                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  Tournaments: {user.tournamentsCount}
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-500 mt-2">
+                Total Points: {user.totalPoints}
               </div>
             </div>
           </div>
@@ -255,20 +219,6 @@ const LeaderboardTable = () => {
               </div>
 
               <select
-                value={selectedTournament}
-                onChange={(e) => handleTournamentChange(e.target.value)}
-                disabled={!tournaments || tournaments.length === 0}
-                className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[180px]"
-              >
-                {tournaments &&
-                  tournaments.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.name}
-                    </option>
-                  ))}
-              </select>
-
-              <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 disabled={!categories || categories.length === 0}
@@ -286,7 +236,7 @@ const LeaderboardTable = () => {
             <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">
               <button
                 onClick={handleSearch}
-                disabled={!selectedTournament || !selectedCategory || loading}
+                disabled={!selectedCategory || loading}
                 className="px-6 py-3 bg-white text-black rounded-xl shadow-md font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -307,38 +257,49 @@ const LeaderboardTable = () => {
           </div>
         )}
 
-        {!loading && (!selectedTournament || !selectedCategory) && (
+        {!loading && !selectedCategory && (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-gray-700 text-lg font-semibold mb-2">
-              Loading Tournament and Category...
+              Loading Categories...
             </h3>
             <p className="text-gray-500 text-sm">
-              Please wait while we load the available tournaments and categories
+              Please wait while we load the available categories
             </p>
           </div>
         )}
 
         {!loading &&
-          selectedTournament &&
           selectedCategory &&
-          currentRanking?.players?.length === 0 && (
+          currentRanking?.users?.length === 0 && (
             <div className="bg-white rounded-lg shadow-sm p-12 text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-gray-700 text-lg font-semibold mb-2">
                 No Players Found
               </h3>
               <p className="text-gray-500 text-sm">
-                No ranking data available for the selected tournament and
-                category
+                No ranking data available for the selected category
               </p>
             </div>
           )}
 
         {!loading &&
-          currentRanking?.players &&
-          currentRanking.players.length > 0 && (
+          currentRanking?.users &&
+          currentRanking.users.length > 0 && (
             <>
+              {/* Category Info */}
+              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {currentRanking.category?.name}
+                </h2>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <span className="capitalize">{currentRanking.category?.type}</span>
+                  <span>•</span>
+                  <span>{currentRanking.pagination?.totalUsers || 0} Players</span>
+                </div>
+              </div>
+
+              {/* Desktop Table */}
               <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -350,59 +311,44 @@ const LeaderboardTable = () => {
                         <th className="px-6 py-4 font-semibold text-sm text-left">
                           Player Information
                         </th>
-                        {/* <th className="px-6 py-4 font-semibold text-sm text-left">
-                          Partner Information
-                        </th> */}
-                        {/* <th className="px-6 py-4 font-semibold text-sm text-left">Position</th> */}
+                       
                         <th className="px-6 py-4 font-semibold text-sm text-left">
-                          Points
+                          Total Points
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Tournaments
                         </th>
                       </tr>
                     </thead>
 
                     <tbody>
-                      {currentPlayers.length > 0 ? (
-                        currentPlayers.map((player) => (
+                      {currentUsers.length > 0 ? (
+                        currentUsers.map((user) => (
                           <tr
-                            key={`${player.user?._id}-${player.rank}-${player.memberId}`}
+                            key={`${user._id}-${user.rank}`}
                             className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center">
-                                <MedalIcon rank={player.rank} />
+                                <MedalIcon rank={user.rank} />
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <PlayerInfo player={player} showPartner={false} />
+                              <UserInfo user={user} />
                             </td>
-                            {/* <td className="px-6 py-4">
-                              {player.partner ? (
-                                <div className="space-y-1">
-                                  <div className="font-medium text-gray-900">
-                                    {player.partner.name}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    QID: {player.partner.qid}
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-sm">
-                                  No Partner
-                                </span>
-                              )}
-                            </td> */}
-                            {/* <td className="px-6 py-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {player.position}
-                            </span>
-                          </td> */}
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                                 <span className="font-semibold text-gray-900">
-                                  {player.points}
+                                  {user.totalPoints}
                                 </span>
                               </div>
+                            </td>
+                           
+                            <td className="px-6 py-4">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {user.tournamentsCount}
+                              </span>
                             </td>
                           </tr>
                         ))
@@ -421,12 +367,13 @@ const LeaderboardTable = () => {
                 </div>
               </div>
 
+              {/* Mobile Cards */}
               <div className="md:hidden space-y-4">
-                {currentPlayers.length > 0 ? (
-                  currentPlayers.map((player) => (
-                    <MobilePlayerCard
-                      key={`${player.user?._id}-${player.rank}-${player.memberId}`}
-                      player={player}
+                {currentUsers.length > 0 ? (
+                  currentUsers.map((user) => (
+                    <MobileUserCard
+                      key={`${user._id}-${user.rank}`}
+                      user={user}
                     />
                   ))
                 ) : (
@@ -436,16 +383,18 @@ const LeaderboardTable = () => {
                 )}
               </div>
 
-              {filteredPlayers.length > 0 && (
+              {/* Pagination Info */}
+              {filteredUsers.length > 0 && (
                 <div className="mt-4 text-gray-600 text-sm">
                   Showing {startIndex + 1}-
-                  {Math.min(endIndex, filteredPlayers.length)} of{" "}
-                  {filteredPlayers.length} players
+                  {Math.min(endIndex, filteredUsers.length)} of{" "}
+                  {filteredUsers.length} players
                   {searchTerm &&
-                    ` (filtered from ${currentRanking.players.length} total)`}
+                    ` (filtered from ${currentRanking.users.length} total)`}
                 </div>
               )}
 
+              {/* Pagination Controls */}
               {totalPages > 1 && (
                 <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-4 py-3 rounded-lg shadow-sm">
                   <button

@@ -55,7 +55,7 @@ export default function UmpireDetails() {
         gender: currentUmpire.gender || "",
         mobileNumber: currentUmpire.mobileNumber || "",
         email: currentUmpire.email || "",
-        experience: currentUmpire.experience || "",
+        QID: currentUmpire.QID || "",
       });
     }
   }, [currentUmpire]);
@@ -75,7 +75,7 @@ export default function UmpireDetails() {
         gender: currentUmpire.gender || "",
         mobileNumber: currentUmpire.mobileNumber || "",
         email: currentUmpire.email || "",
-        experience: currentUmpire.experience || "",
+        QID: currentUmpire.QID || "",
       });
     }
   };
@@ -276,9 +276,9 @@ export default function UmpireDetails() {
       icon: Mail,
     },
     {
-      key: "experience",
-      label: "Experience (Years)",
-      type: "number",
+      key: "QID",
+      label: "QID",
+      type: "text",
       required: false,
     },
   ];
@@ -530,9 +530,9 @@ export default function UmpireDetails() {
                   <Calendar className="w-6 h-6 text-blue-600" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">
-                  {currentUmpire.experience || 0}
+                  {currentUmpire.QID}
                 </h3>
-                <p className="text-sm text-gray-500">Years Experience</p>
+                <p className="text-sm text-gray-500">QID</p>
               </div>
 
               <div className="bg-white rounded-xl shadow-sm p-6 text-center">

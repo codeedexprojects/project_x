@@ -15,7 +15,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
     gender: '',
     mobileNumber: '',
     email: '',
-    experience: ''
+    QID: ''
   });
 
   const [formErrors, setFormErrors] = useState({})
@@ -45,7 +45,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
     if (!formData.gender) errors.gender = 'Gender is required'
     if (!formData.mobileNumber.trim()) errors.mobileNumber = 'Mobile number is required'
     if (!formData.email.trim()) errors.email = 'Email is required'
-    if (!formData.experience) errors.experience = 'Experience is required'
+    if (!formData.QID) errors.QID = 'QID is required'
     
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -53,11 +53,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
       errors.email = 'Please enter a valid email address'
     }
     
-    // Mobile validation
-    const mobileRegex = /^[0-9]{10}$/
-    if (formData.mobileNumber && !mobileRegex.test(formData.mobileNumber.replace(/\D/g, ''))) {
-      errors.mobileNumber = 'Please enter a valid 10-digit mobile number'
-    }
+
     
     setFormErrors(errors)
     return Object.keys(errors).length === 0
@@ -94,7 +90,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
       gender: '',
       mobileNumber: '',
       email: '',
-      experience: ''
+      QID: ''
     });
     setFormErrors({})
   }
@@ -207,7 +203,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
 
               {/* RIGHT COLUMN */}
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold mb-4">Contact & Experience</h3>
+                <h3 className="text-xl font-semibold mb-4">Contact & QID</h3>
 
                 {/* Mobile Number */}
                 <div>
@@ -240,22 +236,20 @@ function CreateUmpireModal({ isOpen, onClose }) {
                   {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
                 </div>
 
-                {/* Experience */}
+                {/* QID */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Experience (Years) *</label>
+                  <label className="block text-sm font-medium mb-2">QID *</label>
                   <input
                     type="number"
-                    name="experience"
-                    value={formData.experience}
+                    name="QID"
+                    value={formData.QID}
                     onChange={handleInputChange}
-                    min="0"
-                    max="50"
                     className={`w-full border rounded-lg px-4 py-3 text-black ${
-                      formErrors.experience ? 'border-red-500' : 'border-gray-300'
+                      formErrors.QID ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    placeholder="Enter years of experience"
+                    placeholder="Enter QID"
                   />
-                  {formErrors.experience && <p className="text-red-500 text-sm mt-1">{formErrors.experience}</p>}
+                  {formErrors.QID && <p className="text-red-500 text-sm mt-1">{formErrors.QID}</p>}
                 </div>
               </div>
             </div>
