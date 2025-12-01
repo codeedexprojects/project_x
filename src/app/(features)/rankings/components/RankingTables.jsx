@@ -84,14 +84,11 @@ const LeaderboardTable = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
-  // Download Excel Function
-// Update both download functions to use filteredUsers instead of currentRanking?.users
 
-// Update downloadExcel function:
 const downloadExcel = () => {
-  if (!filteredUsers.length) return; // Changed from currentRanking?.users?.length
+  if (!filteredUsers.length) return; 
 
-  const dataToExport = filteredUsers.map((user) => ({ // Changed from currentRanking?.users to filteredUsers
+  const dataToExport = filteredUsers.map((user) => ({ 
     Rank: user.rank,
     Name: user.name || "N/A",
     QID: user.qid || "N/A",
@@ -124,9 +121,8 @@ const downloadExcel = () => {
   XLSX.writeFile(workbook, fileName);
 };
 
-// Update downloadPDF function:
 const downloadPDF = () => {
-  if (!filteredUsers.length) return; // Changed from currentRanking?.users?.length
+  if (!filteredUsers.length) return; 
 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.width;
@@ -135,7 +131,7 @@ const downloadPDF = () => {
 
   const categoryName = currentRanking.category?.name || "Rankings";
   const categoryType = currentRanking.category?.type || "";
-  const totalPlayers = filteredUsers.length; // Changed from currentRanking?.users?.length
+  const totalPlayers = filteredUsers.length; 
   const currentDate = new Date().toLocaleDateString();
 
   // Header
@@ -152,7 +148,6 @@ const downloadPDF = () => {
   doc.setFontSize(12);
   doc.text(categoryName, pageWidth / 2, 30, { align: "center" });
 
-  // Metadata - Update to show filtered results
   doc.setFontSize(10);
   const searchInfo = searchTerm ? ` (Search: "${searchTerm}")` : "";
   doc.text(
@@ -196,7 +191,7 @@ const downloadPDF = () => {
   doc.setFontSize(9);
   doc.setFont(undefined, "normal");
 
-  filteredUsers.forEach((user, index) => { // Changed from currentRanking?.users to filteredUsers
+  filteredUsers.forEach((user, index) => { 
     // Check for page break
     if (yPosition > 270) {
       doc.addPage();
@@ -227,19 +222,17 @@ const downloadPDF = () => {
       doc.rect(margin, yPosition - 4, pageWidth - 2 * margin, 8, "F");
     }
 
-    // Rank with special styling for top 3
     if (user.rank <= 3) {
-      doc.setFillColor(255, 215, 0); // Gold color for top 3
+      doc.setFillColor(255, 215, 0); 
       doc.setDrawColor(255, 215, 0);
       doc.rect(columns[0].x - 3, yPosition - 6, 15, 8, "F");
       doc.setTextColor(0, 0, 0);
     }
 
-    // Display filtered rank (original rank from API)
     doc.text(user.rank.toString(), columns[0].x, yPosition);
 
     if (user.rank <= 3) {
-      doc.setTextColor(0, 0, 0); // Reset color
+      doc.setTextColor(0, 0, 0); 
     }
 
     // Player Name (truncated)

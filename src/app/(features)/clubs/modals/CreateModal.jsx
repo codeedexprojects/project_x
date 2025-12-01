@@ -14,7 +14,7 @@ export default function AddClubModal({ isOpen, onClose }) {
     city: "",
     state: "",
     zipCode: "",
-    country: "India",
+    country: "",
     mobileNumbers: [""],
   });
 
@@ -64,7 +64,6 @@ export default function AddClubModal({ isOpen, onClose }) {
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         toast.error('Please upload only image files (JPEG, PNG, WebP)');
@@ -75,7 +74,6 @@ export default function AddClubModal({ isOpen, onClose }) {
         return;
       }
 
-      // Validate file size (2MB limit)
       if (file.size > 2 * 1024 * 1024) {
         toast.error('Image size should be less than 2MB');
         setFormErrors(prev => ({
@@ -87,14 +85,12 @@ export default function AddClubModal({ isOpen, onClose }) {
 
       setLogoFile(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target.result);
       };
       reader.readAsDataURL(file);
       
-      // Clear logo error
       if (formErrors.logo) {
         setFormErrors(prev => ({
           ...prev,

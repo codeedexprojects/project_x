@@ -14,7 +14,7 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
     city: "",
     state: "",
     zipCode: "",
-    country: "India",
+    country: "",
     mobileNumbers: [""],
   });
 
@@ -22,22 +22,42 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
   const [logoPreview, setLogoPreview] = useState("");
   const [formErrors, setFormErrors] = useState({});
 
+  // Properly populate data when modal opens
   useEffect(() => {
     if (existingClub && isOpen) {
+      console.log("Existing club data:", existingClub); // Debug log
+      
       setClubData({
         name: existingClub.name || "",
         street: existingClub.address?.street || "",
         city: existingClub.address?.city || "",
         state: existingClub.address?.state || "",
         zipCode: existingClub.address?.zipCode || "",
-        country: existingClub.address?.country || "India",
-        mobileNumbers: existingClub.mobileNumbers?.length ? existingClub.mobileNumbers : [""],
+        country: existingClub.country || existingClub.address?.country || "India", // Check both locations
+        mobileNumbers: existingClub.mobileNumbers && existingClub.mobileNumbers.length > 0 
+          ? existingClub.mobileNumbers 
+          : [""],
       });
 
       // Set existing logo preview if available
       if (existingClub.logo) {
-        setLogoPreview(existingClub.logo);
+        // If logo is a URL, use it directly
+        if (typeof existingClub.logo === 'string' && (existingClub.logo.startsWith('http') || existingClub.logo.startsWith('/'))) {
+          setLogoPreview(existingClub.logo);
+        } else if (existingClub.logo?.url) {
+          // If logo is an object with url property
+          setLogoPreview(existingClub.logo.url);
+        } else {
+          // If it's a base64 or other format
+          setLogoPreview(existingClub.logo);
+        }
+      } else {
+        setLogoPreview("");
       }
+      
+      // Reset logo file
+      setLogoFile(null);
+      setFormErrors({});
     }
   }, [existingClub, isOpen]);
 
@@ -77,6 +97,14 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
     if (clubData.mobileNumbers.length > 1) {
       const updatedNumbers = clubData.mobileNumbers.filter((_, i) => i !== index);
       setClubData((prev) => ({ ...prev, mobileNumbers: updatedNumbers }));
+      
+      // Remove error for this field if it exists
+      const errorKey = `mobile_${index}`;
+      if (formErrors[errorKey]) {
+        const newErrors = { ...formErrors };
+        delete newErrors[errorKey];
+        setFormErrors(newErrors);
+      }
     }
   };
 
@@ -125,12 +153,22 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
 
   const removeLogo = () => {
     setLogoFile(null);
-    setLogoPreview(existingClub?.logo || "");
+    // If we have an existing logo from the club, keep it as preview
+    if (existingClub?.logo) {
+      if (typeof existingClub.logo === 'string') {
+        setLogoPreview(existingClub.logo);
+      } else if (existingClub.logo?.url) {
+        setLogoPreview(existingClub.logo.url);
+      }
+    } else {
+      setLogoPreview("");
+    }
   };
 
   const validateForm = () => {
     const errors = {};
     
+    // Basic field validation
     if (!clubData.name.trim()) errors.name = 'Club name is required';
     if (!clubData.street.trim()) errors.street = 'Street is required';
     if (!clubData.city.trim()) errors.city = 'City is required';
@@ -138,15 +176,7 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
     if (!clubData.zipCode.trim()) errors.zipCode = 'Zip code is required';
     if (!clubData.country.trim()) errors.country = 'Country is required';
     
-    // Validate mobile numbers
-    clubData.mobileNumbers.forEach((num, idx) => {
-      if (!num.trim()) {
-        errors[`mobile_${idx}`] = 'Mobile number is required';
-      } else if (!/^\d{10}$/.test(num.trim())) {
-        errors[`mobile_${idx}`] = 'Please enter a valid 10-digit mobile number';
-      }
-    });
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -159,11 +189,18 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
       return;
     }
 
+    if (!existingClub?._id) {
+      toast.error('Club ID is missing');
+      return;
+    }
+
     setEditLoading(true);
     
     try {
       // Create FormData for file upload
       const formData = new FormData();
+      
+      // Append basic fields
       formData.append('name', clubData.name.trim());
       formData.append('address[street]', clubData.street.trim());
       formData.append('address[city]', clubData.city.trim());
@@ -176,26 +213,37 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
         formData.append(`mobileNumbers[${index}]`, num.trim());
       });
       
-      // Append logo file if new one is selected
+      // Append logo file only if a new one is selected
       if (logoFile) {
         formData.append('logo', logoFile);
       }
 
-      // Log FormData for debugging
+      // Debug: Log FormData contents
+      console.log("FormData contents:");
       for (let [key, value] of formData.entries()) {
         console.log(`${key}:`, value);
       }
 
-      await dispatch(editClubs({ 
+      // Dispatch the edit action
+      const result = await dispatch(editClubs({ 
         id: existingClub._id, 
         clubData: formData 
       })).unwrap();
       
+      console.log("Update result:", result);
       toast.success("Club updated successfully!");
       onClose();
     } catch (err) {
       console.error('Edit club error:', err);
-      toast.error(err?.message || "Failed to update club");
+      
+      // Handle specific error messages
+      if (err?.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else if (err?.message) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to update club. Please try again.");
+      }
     } finally {
       setEditLoading(false);
     }
@@ -218,6 +266,11 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
             <p className="text-sm mt-1 opacity-80">
               Update the club information as needed
             </p>
+            {existingClub && (
+              <p className="text-xs mt-2 opacity-70">
+                Editing: {existingClub.name}
+              </p>
+            )}
           </div>
 
           <button
@@ -265,6 +318,17 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                           src={logoPreview} 
                           alt="Logo preview" 
                           className="h-40 rounded-lg object-contain border"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = `
+                              <div class="flex flex-col items-center justify-center w-full h-40 bg-gray-100 rounded-lg">
+                                <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" viewBox="0 0 20 16">
+                                  <path stroke="currentColor" strokeWidth="2" d="M13 13h3a3 3 0 000-6h-.025A5.56 5.56 0 0016 6.5 5.5 5.5 0 005.207 5.021 4 4 0 005 5a4 4 0 000 8h2.167M10 15V6m0 0L8 8m2-2l2 2"/>
+                                </svg>
+                                <p class="text-gray-600 text-sm">Logo not available</p>
+                              </div>
+                            `;
+                          }}
                         />
                         <button 
                           type="button"
@@ -279,7 +343,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                       </p>
                     </div>
                   )}
-                  {formErrors.logo && <p className="text-red-500 text-sm mt-1">{formErrors.logo}</p>}
+                  {formErrors.logo && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.logo}</p>
+                  )}
                 </div>
 
                 {/* Club Name */}
@@ -295,7 +361,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                     }`}
                     placeholder="Enter club name"
                   />
-                  {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                  {formErrors.name && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                  )}
                 </div>
               </div>
 
@@ -316,7 +384,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                     }`}
                     placeholder="Enter street address"
                   />
-                  {formErrors.street && <p className="text-red-500 text-sm mt-1">{formErrors.street}</p>}
+                  {formErrors.street && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.street}</p>
+                  )}
                 </div>
 
                 {/* City & State */}
@@ -333,7 +403,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                       }`}
                       placeholder="City"
                     />
-                    {formErrors.city && <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>}
+                    {formErrors.city && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">State *</label>
@@ -347,7 +419,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                       }`}
                       placeholder="State"
                     />
-                    {formErrors.state && <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>}
+                    {formErrors.state && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.state}</p>
+                    )}
                   </div>
                 </div>
 
@@ -365,7 +439,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                       }`}
                       placeholder="Zip code"
                     />
-                    {formErrors.zipCode && <p className="text-red-500 text-sm mt-1">{formErrors.zipCode}</p>}
+                    {formErrors.zipCode && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.zipCode}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Country *</label>
@@ -379,7 +455,9 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                       }`}
                       placeholder="Country"
                     />
-                    {formErrors.country && <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>}
+                    {formErrors.country && (
+                      <p className="text-red-500 text-sm mt-1">{formErrors.country}</p>
+                    )}
                   </div>
                 </div>
 
@@ -389,7 +467,7 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                   {clubData.mobileNumbers.map((num, idx) => (
                     <div key={idx} className="flex gap-2 mb-3">
                       <input
-                        type="text"
+                        type="tel"
                         value={num}
                         onChange={(e) => handleMobileChange(idx, e.target.value)}
                         className={`flex-1 border rounded-lg px-4 py-3 text-black ${
@@ -437,7 +515,7 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                 type="button"
                 onClick={handleClose}
                 disabled={editLoading}
-                className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-100 transition"
+                className="px-6 py-3 border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-100 transition disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -447,7 +525,17 @@ export default function EditClubModal({ isOpen, onClose, existingClub }) {
                 disabled={editLoading}
                 className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#1e0066] to-[#3b2b91] text-white font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
-                {editLoading ? "Saving..." : "Save Changes"}
+                {editLoading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  "Save Changes"
+                )}
               </button>
             </div>
           </form>

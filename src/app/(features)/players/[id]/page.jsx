@@ -1,18 +1,18 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import PlayerProfile from "./components/PlayerProfile";
 import Header from "@/components/Header";
-import { getUserById, updateUser } from "@/redux/slice/playersSlice";
+import { deleteUser, getUserById, updateUser } from "@/redux/slice/playersSlice";
 import { getClubs } from "@/redux/slice/clubSlice";
 import toast from "react-hot-toast";
 
 export default function PlayerProfilePage() {
   const params = useParams();
   const dispatch = useDispatch();
-  const { singleUser, loading, error, updateLoading } = useSelector(
-    (state) => state.playerSlice
+ const { singleUser, loading, error, updateLoading, deleteLoading, deleteError } = useSelector( 
+    (state) => state.playerSlice 
   );
   const { clubs } = useSelector((state) => state.clubs);
 
@@ -21,17 +21,25 @@ export default function PlayerProfilePage() {
   const [originalData, setOriginalData] = useState({});
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const playerId = params.id;
+  const router = useRouter();
+  
 
   useEffect(() => {
     if (playerId) {
       dispatch(getUserById(playerId));
     }
-    dispatch(getClubs()); // Load clubs for selection
+    dispatch(getClubs()); 
   }, [dispatch, playerId]);
 
-  // Initialize form data when user data is loaded
+    useEffect(() => {
+    if (deleteError) {
+      toast.error(deleteError);
+    }
+  }, [deleteError]);
+
   useEffect(() => {
     if (singleUser?.user) {
       const user = singleUser.user;
@@ -164,6 +172,28 @@ export default function PlayerProfilePage() {
       reader.readAsDataURL(file);
     }
   };
+
+
+   const handleDelete = async () => {
+    try {
+      if (!playerId || playerId === "undefined") {
+        toast.error("Invalid player ID");
+        return;
+      }
+
+      const result = await dispatch(deleteUser(playerId)).unwrap();
+      
+      if (result.id) {
+        toast.success(result.message || "Player deleted successfully!");
+        setShowDeleteConfirm(false);
+        router.push("/players"); 
+      }
+    } catch (error) {
+      console.error("Failed to delete player:", error);
+      toast.error(error.message || "Failed to delete player");
+    }
+  };
+
 
   const handleSave = async () => {
     try {
@@ -345,6 +375,34 @@ export default function PlayerProfilePage() {
   return (
     <div>
       <Header />
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Confirm Delete</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete player <strong>{playerData.name}</strong>? 
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-gray-700 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deleteLoading ? "Deleting..." : "Delete Player"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PlayerProfile
         playerData={playerData}
         tournaments={tournaments}
@@ -358,8 +416,10 @@ export default function PlayerProfilePage() {
         onExport={handleExport}
         onInputChange={handleInputChange}
         onImageChange={handleImageChange}
+        onDelete={() => setShowDeleteConfirm(true)}
         showActions={true}
         updateLoading={updateLoading}
+        deleteLoading={deleteLoading} 
       />
     </div>
   );

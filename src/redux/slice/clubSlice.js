@@ -60,7 +60,7 @@ export const editClubs = createAsyncThunk(
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data", // Changed to multipart/form-data
+            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -114,6 +114,7 @@ const clubSlice = createSlice({
       })
       .addCase(getClubs.fulfilled, (state, action) => {
         state.loading = false;
+        // The clubs array is inside action.payload.data
         state.clubs = action.payload?.data || [];
       })
       .addCase(getClubs.rejected, (state, action) => {
@@ -122,7 +123,6 @@ const clubSlice = createSlice({
       })
 
       // create club
-
       .addCase(createClubs.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -131,7 +131,10 @@ const clubSlice = createSlice({
       .addCase(createClubs.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.clubs.push(action.payload.data);
+        // The new club is inside action.payload.data
+        if (action.payload?.data) {
+          state.clubs.push(action.payload.data);
+        }
       })
       .addCase(createClubs.rejected, (state, action) => {
         state.loading = false;
@@ -146,11 +149,15 @@ const clubSlice = createSlice({
       .addCase(editClubs.fulfilled, (state, action) => {
         state.loading = false;
         state.successMessage = "Club updated successfully!";
-        const index = state.clubs.findIndex(
-          (club) => club._id === action.payload._id
-        );
-        if (index !== -1) {
-          state.clubs[index] = action.payload;
+        // The updated club is inside action.payload.data
+        const updatedClub = action.payload?.data;
+        if (updatedClub) {
+          const index = state.clubs.findIndex(
+            (club) => club._id === updatedClub._id
+          );
+          if (index !== -1) {
+            state.clubs[index] = updatedClub;
+          }
         }
       })
       .addCase(editClubs.rejected, (state, action) => {
@@ -164,9 +171,13 @@ const clubSlice = createSlice({
       })
       .addCase(deleteClubs.fulfilled, (state, action) => {
         state.deleting = false;
-        state.clubs = state.clubs.filter(
-          (club) => club._id !== action.payload.id
-        );
+        // The deleted club ID might be in action.payload.data.id or action.payload.data._id
+        const deletedClubId = action.payload?.data?.id || action.payload?.data?._id;
+        if (deletedClubId) {
+          state.clubs = state.clubs.filter(
+            (club) => club._id !== deletedClubId
+          );
+        }
       })
       .addCase(deleteClubs.rejected, (state, action) => {
         state.deleting = false;
@@ -174,5 +185,4 @@ const clubSlice = createSlice({
       });
   },
 });
-
 export default clubSlice.reducer;

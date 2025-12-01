@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  Plus,
   Pencil,
   Trash2,
   Search,
@@ -115,20 +114,16 @@ export default function ClubsTable() {
   };
   const handleDownloadPDF = () => {
     try {
-      // Create new PDF instance
       const doc = new jsPDF();
 
-      // Add title
       doc.setFontSize(16);
-      doc.setTextColor(30, 0, 102); // Match your theme color
+      doc.setTextColor(30, 0, 102);
       doc.text("Clubs Report", 14, 15);
 
-      // Add date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
 
-      // Prepare data for PDF table
       const tableData = filteredClubs.map((club, index) => [
         index + 1,
         club.name || "N/A",
@@ -139,7 +134,6 @@ export default function ClubsTable() {
         club.email || "N/A",
       ]);
 
-      // Add table to PDF
       autoTable(doc, {
         head: [
           [
@@ -160,7 +154,7 @@ export default function ClubsTable() {
           cellPadding: 3,
         },
         headStyles: {
-          fillColor: [30, 0, 102], // Dark blue color from your theme
+          fillColor: [30, 0, 102],
           textColor: 255,
           fontStyle: "bold",
         },
@@ -170,7 +164,6 @@ export default function ClubsTable() {
         margin: { left: 14, right: 14 },
       });
 
-      // Save PDF
       const fileName = `clubs_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
 
@@ -519,7 +512,7 @@ export default function ClubsTable() {
         <EditClubModal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
-          club={selectedClub}
+          existingClub={selectedClub}
         />
         <DeleteClubModal
           isOpen={isDeleteOpen}

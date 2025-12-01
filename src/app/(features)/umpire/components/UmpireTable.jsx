@@ -1,10 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { getUmpiresAdmin } from "@/redux/slice/umpireSlice";
 import CreateUmpireModal from "./AddUmpireModal";
@@ -14,7 +10,6 @@ import { RiFileExcel2Line, RiFilePdf2Line } from "react-icons/ri";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast, { Toaster } from "react-hot-toast";
-
 
 export default function UmpiresTable() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -40,91 +35,101 @@ export default function UmpiresTable() {
     "All",
     ...new Set(umpires?.map((u) => u.country).filter(Boolean)),
   ];
-const handleDownloadExcel = () => {
-  try {
-    const excelData = filteredUmpires.map((umpire, index) => ({
-      "Sl.no": index + 1,
-      "Umpire Name": umpire?.name || "N/A",
-      "Gender": umpire?.gender || "N/A",
-      "Passport": umpire?.passport || "N/A",
-      "Country": umpire?.country || "N/A",
-      "Mobile Number": umpire?.mobileNumber || "N/A",
-      "Tournament Assigned": umpire?.assignedTournamentsCount > 0 ? "Yes" : "No",
-      "Email": umpire?.email || "N/A",
-      "Date of Birth": umpire?.dob || "N/A",
-    }));
+  const handleDownloadExcel = () => {
+    try {
+      const excelData = filteredUmpires.map((umpire, index) => ({
+        "Sl.no": index + 1,
+        "Umpire Name": umpire?.name || "N/A",
+        Gender: umpire?.gender || "N/A",
+        Passport: umpire?.passport || "N/A",
+        Country: umpire?.country || "N/A",
+        "Mobile Number": umpire?.mobileNumber || "N/A",
+        "Tournament Assigned":
+          umpire?.assignedTournamentsCount > 0 ? "Yes" : "No",
+        Email: umpire?.email || "N/A",
+        "Date of Birth": umpire?.dob || "N/A",
+      }));
 
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, "Umpires");
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      XLSX.utils.book_append_sheet(wb, ws, "Umpires");
 
-    const fileName = `umpires_${new Date().toISOString().split("T")[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
-    
-    toast.success("Excel file downloaded successfully");
-  } catch (error) {
-    console.error("Error generating Excel file:", error);
-    toast.error("Failed to export Excel file");
-  }
-};
+      const fileName = `umpires_${new Date().toISOString().split("T")[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
 
-const handleDownloadPDF = () => {
-  try {
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(16);
-    doc.setTextColor(23, 5, 124); // Match your theme color
-    doc.text('Umpires Report', 14, 15);
-    
-    // Add date
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-    
-    // Prepare data for PDF table
-    const tableData = filteredUmpires.map((umpire, index) => [
-      index + 1,
-      umpire?.name || "N/A",
-      umpire?.gender || "N/A",
-      umpire?.passport || "N/A",
-      umpire?.country || "N/A",
-      umpire?.mobileNumber || "N/A",
-      umpire?.assignedTournamentsCount > 0 ? "Assigned" : "Not Assigned"
-    ]);
-    
-    // Add table to PDF
-    autoTable(doc, {
-      head: [['Sl.no', 'Umpire Name', 'Gender', 'Passport', 'Country', 'Mobile', 'Status']],
-      body: tableData,
-      startY: 30,
-      theme: 'grid',
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [23, 5, 124], // Your theme's blue color
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { left: 14, right: 14 }
-    });
-    
-    // Save PDF
-    const fileName = `umpires_${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(fileName);
-    
-    toast.success("PDF file downloaded successfully");
-    
-  } catch (error) {
-    console.error("Error generating PDF file:", error);
-    toast.error("Failed to export PDF file");
-  }
-};
+      toast.success("Excel file downloaded successfully");
+    } catch (error) {
+      console.error("Error generating Excel file:", error);
+      toast.error("Failed to export Excel file");
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      // Add title
+      doc.setFontSize(16);
+      doc.setTextColor(23, 5, 124); // Match your theme color
+      doc.text("Umpires Report", 14, 15);
+
+      // Add date
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+      // Prepare data for PDF table
+      const tableData = filteredUmpires.map((umpire, index) => [
+        index + 1,
+        umpire?.name || "N/A",
+        umpire?.gender || "N/A",
+        umpire?.passport || "N/A",
+        umpire?.country || "N/A",
+        umpire?.mobileNumber || "N/A",
+        umpire?.assignedTournamentsCount > 0 ? "Assigned" : "Not Assigned",
+      ]);
+
+      // Add table to PDF
+      autoTable(doc, {
+        head: [
+          [
+            "Sl.no",
+            "Umpire Name",
+            "Gender",
+            "Passport",
+            "Country",
+            "Mobile",
+            "Status",
+          ],
+        ],
+        body: tableData,
+        startY: 30,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [23, 5, 124], // Your theme's blue color
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Save PDF
+      const fileName = `umpires_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(fileName);
+
+      toast.success("PDF file downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF file:", error);
+      toast.error("Failed to export PDF file");
+    }
+  };
   // Filter umpires
   const filteredUmpires =
     umpires?.filter((umpire) => {
@@ -185,47 +190,22 @@ const handleDownloadPDF = () => {
                 >
                   + CREATE UMPIRE
                 </button>
-                 <button
-    onClick={handleDownloadPDF}
-    className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
-  >
-    <RiFilePdf2Line className="w-4 h-4" />
-    PDF
-  </button>
-  
-  {/* Excel Export Button */}
-  <button
-    onClick={handleDownloadExcel}
-    className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
-  >
-    <RiFileExcel2Line className="w-4 h-4" />
-    Export
-  </button>
-                {/* Gender Filter */}
-                <select
-                  value={selectedGender}
-                  onChange={(e) => setSelectedGender(e.target.value)}
-                  className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[150px]"
+                <button
+                  onClick={handleDownloadPDF}
+                  className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
                 >
-                  {genders.map((gender) => (
-                    <option key={gender} value={gender}>
-                      {gender}
-                    </option>
-                  ))}
-                </select>
+                  <RiFilePdf2Line className="w-4 h-4" />
+                  PDF
+                </button>
 
-                {/* Country Filter */}
-                <select
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[170px]"
+                {/* Excel Export Button */}
+                <button
+                  onClick={handleDownloadExcel}
+                  className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
                 >
-                  {countries.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
+                  <RiFileExcel2Line className="w-4 h-4" />
+                  Export
+                </button>
               </div>
             </div>
           </div>

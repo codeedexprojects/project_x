@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Trophy, Edit, Save, X, User, Camera } from "lucide-react";
+import { Trophy, Edit, Save, X, User, Camera, Trash2 } from "lucide-react";
 
 export default function PlayerProfile({
   playerData,
@@ -14,8 +14,10 @@ export default function PlayerProfile({
   onSave,
   onInputChange,
   onImageChange,
+  onDelete, 
   showActions = true,
   updateLoading = false,
+  deleteLoading = false, 
 }) {
   const getPositionColor = (color) => {
     const colors = {
@@ -144,6 +146,14 @@ export default function PlayerProfile({
                   >
                     <Edit className="w-4 h-4" />
                     Edit Profile
+                  </button>
+                   <button
+                    onClick={onDelete}
+                    disabled={deleteLoading}
+                    className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none justify-center"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {deleteLoading ? "Deleting..." : "Delete Player"}
                   </button>
                 </>
               ) : (
