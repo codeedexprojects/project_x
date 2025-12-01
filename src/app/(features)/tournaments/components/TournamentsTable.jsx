@@ -1,14 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Trash2,
-  Search,
-  Edit2,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-} from "lucide-react";
+import { Trash2, Search, Edit2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   deleteTournament,
@@ -19,6 +12,9 @@ import DeleteModal from "./DeleteModal";
 import EditModal from "./EditModal";
 import * as XLSX from "xlsx";
 import { RiFileExcel2Line } from "react-icons/ri";
+import { RiFilePdf2Line } from "react-icons/ri";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function TournamentsTable() {
   const dispatch = useDispatch();
@@ -105,10 +101,8 @@ export default function TournamentsTable() {
     setSelectedTournament(null);
   };
 
-
   const handleDownloadExcel = () => {
     try {
-      // Prepare data for Excel
       const excelData = filteredTournaments.map((tournament, index) => ({
         "Sl.No": index + 1,
         "Tournament Name": tournament?.name || "Unnamed Tournament",
@@ -122,14 +116,11 @@ export default function TournamentsTable() {
           : "Completed",
       }));
 
-      // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(excelData);
 
-      // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, "Tournaments");
 
-      // Generate Excel file and trigger download
       const fileName = `tournaments_${
         new Date().toISOString().split("T")[0]
       }.xlsx`;
@@ -137,6 +128,70 @@ export default function TournamentsTable() {
     } catch (error) {
       console.error("Error generating Excel file:", error);
       alert("Failed to export tournaments. Please try again.");
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Tournaments Report", 14, 15);
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+      const tableData = filteredTournaments.map((tournament, index) => [
+        index + 1,
+        tournament?.name || "Unnamed Tournament",
+        tournament.location || "Location not specified",
+        formatDateTime(tournament.start_date),
+        formatDateTime(tournament.end_date),
+        isActive(tournament.start_date, tournament.end_date)
+          ? "Active"
+          : isUpcoming(tournament.start_date)
+          ? "Upcoming"
+          : "Completed",
+      ]);
+
+      autoTable(doc, {
+        head: [
+          [
+            "Sl.No",
+            "Tournament Name",
+            "Place",
+            "Start Date",
+            "End Date",
+            "Status",
+          ],
+        ],
+        body: tableData,
+        startY: 30,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [30, 0, 102],
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      const fileName = `tournaments_${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error("Error generating PDF file:", error);
+      alert("Failed to export tournaments as PDF. Please try again.");
     }
   };
   const formatDateTime = (dateString) => {
@@ -161,12 +216,9 @@ export default function TournamentsTable() {
     return new Date(startDate) <= now && new Date(endDate) >= now;
   };
 
-  // Get unique statuses
   const statuses = ["All", "Active", "Upcoming", "Completed"];
 
-  // Filter tournaments based on search and status
   const filteredTournaments = tournaments.filter((tournament) => {
-    // Safe check for tournament name
     const tournamentName = tournament?.name || "";
     const matchesSearch = tournamentName
       .toLowerCase()
@@ -186,7 +238,6 @@ export default function TournamentsTable() {
     return matchesSearch && matchesStatus;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredTournaments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -196,15 +247,12 @@ export default function TournamentsTable() {
     <>
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-        
-         
-
           <div
             className="rounded-2xl p-6 md:p-8 mb-6"
-          style={{
-            background:
-              "linear-gradient(277.59deg, #17057C -12.13%, #000000 115.41%)",
-          }}
+            style={{
+              background:
+                "linear-gradient(277.59deg, #17057C -12.13%, #000000 115.41%)",
+            }}
           >
             <p className="text-white text-lg font-medium mb-4">
               What are you looking for
@@ -239,6 +287,13 @@ export default function TournamentsTable() {
                   className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
                 >
                   + Create Tournament
+                </button>
+                <button
+                  onClick={handleDownloadPDF}
+                  className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2"
+                >
+                  <RiFilePdf2Line className="w-4 h-4" />
+                  PDF
                 </button>
 
                 <button

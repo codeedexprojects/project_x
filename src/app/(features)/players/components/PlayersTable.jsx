@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getPlayersAdmin } from "@/redux/slice/playersSlice";
 import { useRouter } from "next/navigation";
 import { RiFileExcel2Line } from "react-icons/ri";
+import "jspdf-autotable";
 
 export default function PlayersTable() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,6 +18,7 @@ export default function PlayersTable() {
   const [isDownloading, setIsDownloading] = useState(false);
   const itemsPerPage = 10;
   const [showFilter, setShowFilter] = useState(false);
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -27,7 +29,171 @@ export default function PlayersTable() {
     dispatch(getPlayersAdmin());
   }, [dispatch]);
 
-  // Debounce filter changes to prevent excessive loading states
+  const handleDownloadPDF = async () => {
+    setIsDownloadingPDF(true);
+    try {
+      const { jsPDF } = await import("jspdf");
+      await import("jspdf-autotable");
+
+      const doc = new jsPDF();
+
+      doc.setFontSize(20);
+      doc.setTextColor(30, 0, 102); 
+      doc.setFont("helvetica", "bold");
+      doc.text("Players List", 105, 20, { align: "center" });
+
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont("helvetica", "normal");
+      doc.text(
+        `Generated on: ${new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}`,
+        105,
+        28,
+        { align: "center" }
+      );
+
+      let filterInfo = "All Players";
+      if (searchTerm || selectedClub !== "All" || selectedCountry !== "All") {
+        const filters = [];
+        if (searchTerm) filters.push(`Search: ${searchTerm}`);
+        if (selectedClub !== "All") filters.push(`Club: ${selectedClub}`);
+        if (selectedCountry !== "All")
+          filters.push(`Country: ${selectedCountry}`);
+        filterInfo = `Filters: ${filters.join(" | ")}`;
+      }
+
+      doc.text(filterInfo, 105, 35, { align: "center" });
+
+      doc.text(`Total Players: ${filteredPlayers.length}`, 105, 42, {
+        align: "center",
+      });
+
+      const tableData = filteredPlayers.map((player, index) => [
+        index + 1,
+        player.name?.trim() || "-",
+        player.qid?.trim() || "-",
+        player.club?.name?.trim() || "N/A",
+        player.country?.trim() || "N/A",
+        player.mobile?.trim() || "-",
+      ]);
+
+      // Generate table with better styling
+      doc.autoTable({
+        startY: 50,
+        head: [["#", "Player Name", "QID", "Club", "Country", "Mobile"]],
+        body: tableData,
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+          textColor: [0, 0, 0],
+          font: "helvetica",
+        },
+        headStyles: {
+          fillColor: [30, 0, 102],
+          textColor: 255,
+          fontStyle: "bold",
+          fontSize: 10,
+          cellPadding: 4,
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 255],
+        },
+        columnStyles: {
+          0: { cellWidth: 12, halign: "center" }, 
+          1: { cellWidth: 35 }, 
+          2: { cellWidth: 30 }, 
+          3: { cellWidth: 35 }, 
+          4: { cellWidth: 25 }, 
+          5: { cellWidth: 30 }, 
+        },
+        margin: { top: 50 },
+        tableLineColor: [200, 200, 200],
+        tableLineWidth: 0.1,
+      });
+
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${pageCount}`,
+          doc.internal.pageSize.getWidth() / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: "center" }
+        );
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      doc.save(`players_list_${timestamp}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+
+      try {
+        const { jsPDF } = await import("jspdf");
+        const doc = new jsPDF();
+
+        doc.setFontSize(16);
+        doc.setTextColor(30, 0, 102);
+        doc.text("Players List", 20, 20);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 30);
+        doc.text(`Total Players: ${filteredPlayers.length}`, 20, 38);
+
+        let yPosition = 50;
+        doc.setFontSize(8);
+        doc.setTextColor(0, 0, 0);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("#", 20, yPosition);
+        doc.text("Player Name", 30, yPosition);
+        doc.text("QID", 80, yPosition);
+        doc.text("Club", 120, yPosition);
+        doc.text("Country", 160, yPosition);
+
+        yPosition += 6;
+        doc.setDrawColor(200, 200, 200);
+        doc.line(20, yPosition, 190, yPosition);
+        yPosition += 10;
+
+        doc.setFont("helvetica", "normal");
+        filteredPlayers.forEach((player, index) => {
+          if (yPosition > 270) {
+            doc.addPage();
+            yPosition = 20;
+          }
+
+          doc.text(`${index + 1}`, 20, yPosition);
+          doc.text(player.name?.substring(0, 25) || "-", 30, yPosition);
+          doc.text(player.qid?.substring(0, 15) || "-", 80, yPosition);
+          doc.text(
+            player.club?.name?.substring(0, 15) || "N/A",
+            120,
+            yPosition
+          );
+          doc.text(player.country?.substring(0, 15) || "N/A", 160, yPosition);
+
+          yPosition += 6;
+        });
+
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        doc.save(`players_simple_${timestamp}.pdf`);
+      } catch (fallbackError) {
+        console.error("Fallback PDF also failed:", fallbackError);
+        alert("Failed to generate PDF. Please try exporting as Excel instead.");
+      }
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
   useEffect(() => {
     setIsFilterLoading(true);
     const timer = setTimeout(() => {
@@ -37,7 +203,6 @@ export default function PlayersTable() {
     return () => clearTimeout(timer);
   }, [searchTerm, selectedClub, selectedCountry]);
 
-  // Get unique clubs and countries
   const clubs = [
     "All",
     ...new Set(players.map((p) => p.club?.name).filter(Boolean)),
@@ -47,7 +212,6 @@ export default function PlayersTable() {
     ...new Set(players.map((p) => p.country).filter(Boolean)),
   ];
 
-  // Filter players
   const filteredPlayers = players.filter((player) => {
     const matchesSearch =
       player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,7 +226,6 @@ export default function PlayersTable() {
     return matchesSearch && matchesClub && matchesCountry;
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -74,7 +237,6 @@ export default function PlayersTable() {
   const handleDownloadExcel = async () => {
     setIsDownloading(true);
     try {
-      // Create CSV content
       const headers = [
         "Sl.no",
         "Player Name",
@@ -97,7 +259,6 @@ export default function PlayersTable() {
         ),
       ].join("\n");
 
-      // Create and download file
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
@@ -117,7 +278,6 @@ export default function PlayersTable() {
     }
   };
 
-  // Loading skeleton component
   const TableSkeleton = () => (
     <div className="space-y-4">
       {[...Array(10)].map((_, index) => (
@@ -182,7 +342,6 @@ export default function PlayersTable() {
     <>
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-
           <div
             className="rounded-2xl p-6 md:p-8 mb-6"
             style={{
@@ -217,9 +376,7 @@ export default function PlayersTable() {
                 </button>
               </div>
 
-              {/* Right Group: Create Player + Export */}
               <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">
-                {/* Create Player */}
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
@@ -227,19 +384,37 @@ export default function PlayersTable() {
                   + Create Player
                 </button>
 
-                {/* PDF Export with icon */}
-                <button
-                  onClick={handleDownloadExcel}
-                  className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2"
-                >
-                  <RiFileExcel2Line className="w-4 h-4" />
-                   Export
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloadingPDF}
+                    className="border border-white text-white px-4 py-3 rounded-xl flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isDownloadingPDF ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-1 border-white"></div>
+                    ) : (
+                      <File className="w-4 h-4" />
+                    )}
+                    {isDownloadingPDF ? "Generating..." : "PDF"}
+                  </button>
+
+                  <button
+                    onClick={handleDownloadExcel}
+                    disabled={isDownloading}
+                    className="border border-white text-white px-4 py-3 rounded-xl flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isDownloading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-1 border-white"></div>
+                    ) : (
+                      <RiFileExcel2Line className="w-4 h-4" />
+                    )}
+                    Excel
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Loading State for Initial Data Fetch */}
           {loading && (
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="text-center">
@@ -249,7 +424,6 @@ export default function PlayersTable() {
             </div>
           )}
 
-          {/* Table Section - Desktop */}
           {!loading && (
             <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
               {isFilterLoading ? (
@@ -323,7 +497,6 @@ export default function PlayersTable() {
             </div>
           )}
 
-          {/* Card View - Mobile */}
           {!loading && (
             <div className="md:hidden space-y-4">
               {isFilterLoading ? (
@@ -381,7 +554,6 @@ export default function PlayersTable() {
             </div>
           )}
 
-          {/* Results Count */}
           {!loading && !isFilterLoading && (
             <div className="mt-4 text-gray-600 text-sm">
               Showing {startIndex + 1}-
@@ -390,7 +562,6 @@ export default function PlayersTable() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && !isFilterLoading && totalPages > 1 && (
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-4 py-3 rounded-lg shadow-sm">
               <button
@@ -444,12 +615,9 @@ export default function PlayersTable() {
             </div>
           )}
         </div>
-      </div>
-      {/* Filter Popup */}
-      {showFilter && (
+      </div>      {showFilter && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white w-[90%] md:w-[600px] rounded-2xl p-6 relative shadow-xl">
-            {/* Close Button */}
             <button
               onClick={() => setShowFilter(false)}
               className="absolute top-4 right-4 text-black"
@@ -458,7 +626,6 @@ export default function PlayersTable() {
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              {/* Club */}
               <div>
                 <label className="text-gray-700 font-medium">Club</label>
                 <select
@@ -472,7 +639,6 @@ export default function PlayersTable() {
                 </select>
               </div>
 
-              {/* Country */}
               <div>
                 <label className="text-gray-700 font-medium">Country</label>
                 <select
@@ -487,7 +653,6 @@ export default function PlayersTable() {
               </div>
             </div>
 
-            {/* View List Button */}
             <div className="flex justify-center mt-8">
               <button
                 onClick={() => setShowFilter(false)}

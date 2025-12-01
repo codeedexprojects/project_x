@@ -8,10 +8,8 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal,
   Phone,
   MapPin,
-  Download,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteClubs, getClubs } from "@/redux/slice/clubSlice";
@@ -21,6 +19,9 @@ import toast, { Toaster } from "react-hot-toast";
 import DeleteClubModal from "../modals/DeleteClubModal";
 import * as XLSX from "xlsx";
 import { RiFileExcel2Line } from "react-icons/ri";
+import { RiFilePdf2Line } from "react-icons/ri";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function ClubsTable() {
   const dispatch = useDispatch();
@@ -112,6 +113,74 @@ export default function ClubsTable() {
       toast.error("Failed to export Excel file");
     }
   };
+  const handleDownloadPDF = () => {
+    try {
+      // Create new PDF instance
+      const doc = new jsPDF();
+
+      // Add title
+      doc.setFontSize(16);
+      doc.setTextColor(30, 0, 102); // Match your theme color
+      doc.text("Clubs Report", 14, 15);
+
+      // Add date
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
+
+      // Prepare data for PDF table
+      const tableData = filteredClubs.map((club, index) => [
+        index + 1,
+        club.name || "N/A",
+        club.clubId || "N/A",
+        club.address?.city || "N/A",
+        club.address?.state || "N/A",
+        formatMobileNumbers(club.mobileNumbers),
+        club.email || "N/A",
+      ]);
+
+      // Add table to PDF
+      autoTable(doc, {
+        head: [
+          [
+            "Sl.no",
+            "Club Name",
+            "Club ID",
+            "City",
+            "State",
+            "Contact Numbers",
+            "Email",
+          ],
+        ],
+        body: tableData,
+        startY: 30,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [30, 0, 102], // Dark blue color from your theme
+          textColor: 255,
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // Save PDF
+      const fileName = `clubs_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(fileName);
+
+      toast.success("PDF file downloaded successfully");
+    } catch (error) {
+      console.error("Error generating PDF file:", error);
+      toast.error("Failed to export PDF file");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -149,7 +218,14 @@ export default function ClubsTable() {
                 onClick={() => setIsModalOpen(true)}
                 className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
               >
-               + CREATE CLUB
+                + CREATE CLUB
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
+              >
+                <RiFilePdf2Line className="w-4 h-4" />
+                PDF
               </button>
               <button
                 onClick={exportToExcel}
