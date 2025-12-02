@@ -1,4 +1,3 @@
-// app/login/page.js
 "use client";
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";

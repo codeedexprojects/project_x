@@ -143,57 +143,55 @@ function CreateTournamentModal({ isOpen, onClose }) {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fill all required fields correctly");
-      return;
+  if (!validateForm()) {
+    toast.error("Please fill all required fields correctly");
+    return;
+  }
+
+  const loadingToast = toast.loading("Creating tournament...");
+
+  try {
+    const submitData = new FormData();
+    submitData.append("name", formData.name.trim());
+    submitData.append("location", formData.location.trim());
+    submitData.append("start_date", formData.start_date);
+    submitData.append("end_date", formData.end_date);
+
+    if (formData.file) {
+      submitData.append("file", formData.file);
     }
 
-    const loadingToast = toast.loading("Creating tournament...");
+    const result = await dispatch(createTournament(submitData)).unwrap();
 
-    try {
-      // Create FormData object to handle file upload
-      const submitData = new FormData();
-      submitData.append("name", formData.name.trim());
-      submitData.append("location", formData.location.trim());
-      submitData.append("start_date", formData.start_date);
-      submitData.append("end_date", formData.end_date);
+    toast.dismiss(loadingToast);
+    toast.success("Tournament created successfully!");
 
-      if (formData.file) {
-        submitData.append("file", formData.file);
-      }
+    resetForm();
+    onClose();
+    
+    dispatch(getTournamentsAdmin());
+  } catch (error) {
+    console.error("Failed to create tournament:", error);
+    toast.dismiss(loadingToast);
 
-      const result = await dispatch(createTournament(submitData)).unwrap();
-
-      toast.dismiss(loadingToast);
-      toast.success("Tournament created successfully!");
-
-      // Reset form and close modal
-      resetForm();
-      onClose();
-    } catch (error) {
-      console.error("Failed to create tournament:", error);
-      toast.dismiss(loadingToast);
-
-      // Handle the specific error response structure
-      if (
-        error?.message === "File already exists" &&
-        error?.errors?.length > 0
-      ) {
-        // Show the specific file error message from the response
-        const fileError = error.errors.find((err) => err.field === "file");
-        if (fileError) {
-          toast.error(fileError.message);
-        } else {
-          toast.error(error.message || "File already exists");
-        }
+    if (
+      error?.message === "File already exists" &&
+      error?.errors?.length > 0
+    ) {
+      const fileError = error.errors.find((err) => err.field === "file");
+      if (fileError) {
+        toast.error(fileError.message);
       } else {
-        toast.error(error || "Failed to create tournament");
+        toast.error(error.message || "File already exists");
       }
+    } else {
+      toast.error(error || "Failed to create tournament");
     }
-  };
+  }
+};
 
   const resetForm = () => {
     setFormData({
