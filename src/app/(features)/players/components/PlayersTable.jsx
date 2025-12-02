@@ -19,7 +19,8 @@ export default function PlayersTable() {
   const itemsPerPage = 10;
   const [showFilter, setShowFilter] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
-
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const statusOptions = ["All", "Active", "Inactive"];
   const dispatch = useDispatch();
   const router = useRouter();
 
@@ -28,6 +29,15 @@ export default function PlayersTable() {
   useEffect(() => {
     dispatch(getPlayersAdmin());
   }, [dispatch]);
+
+  useEffect(() => {
+    setIsFilterLoading(true);
+    const timer = setTimeout(() => {
+      setIsFilterLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, selectedClub, selectedCountry, selectedStatus]);
 
   const handleDownloadPDF = async () => {
     setIsDownloadingPDF(true);
@@ -38,7 +48,7 @@ export default function PlayersTable() {
       const doc = new jsPDF();
 
       doc.setFontSize(20);
-      doc.setTextColor(30, 0, 102); 
+      doc.setTextColor(30, 0, 102);
       doc.setFont("helvetica", "bold");
       doc.text("Players List", 105, 20, { align: "center" });
 
@@ -57,12 +67,18 @@ export default function PlayersTable() {
       );
 
       let filterInfo = "All Players";
-      if (searchTerm || selectedClub !== "All" || selectedCountry !== "All") {
+      if (
+        searchTerm ||
+        selectedClub !== "All" ||
+        selectedCountry !== "All" ||
+        selectedStatus !== "All"
+      ) {
         const filters = [];
         if (searchTerm) filters.push(`Search: ${searchTerm}`);
         if (selectedClub !== "All") filters.push(`Club: ${selectedClub}`);
         if (selectedCountry !== "All")
           filters.push(`Country: ${selectedCountry}`);
+        if (selectedStatus !== "All") filters.push(`Status: ${selectedStatus}`);
         filterInfo = `Filters: ${filters.join(" | ")}`;
       }
 
@@ -104,12 +120,12 @@ export default function PlayersTable() {
           fillColor: [245, 245, 255],
         },
         columnStyles: {
-          0: { cellWidth: 12, halign: "center" }, 
-          1: { cellWidth: 35 }, 
-          2: { cellWidth: 30 }, 
-          3: { cellWidth: 35 }, 
-          4: { cellWidth: 25 }, 
-          5: { cellWidth: 30 }, 
+          0: { cellWidth: 12, halign: "center" },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 30 },
         },
         margin: { top: 50 },
         tableLineColor: [200, 200, 200],
@@ -222,8 +238,12 @@ export default function PlayersTable() {
       selectedClub === "All" || player.club?.name === selectedClub;
     const matchesCountry =
       selectedCountry === "All" || player.country === selectedCountry;
+    const matchesStatus =
+      selectedStatus === "All" ||
+      (selectedStatus === "Active" && player.isActive === true) ||
+      (selectedStatus === "Inactive" && player.isActive === false);
 
-    return matchesSearch && matchesClub && matchesCountry;
+    return matchesSearch && matchesClub && matchesCountry && matchesStatus;
   });
 
   const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
@@ -447,6 +467,9 @@ export default function PlayersTable() {
                           QID
                         </th>
                         <th className="px-6 py-4 font-semibold text-sm text-left">
+                          Status
+                        </th>
+                        <th className="px-6 py-4 font-semibold text-sm text-left">
                           Club
                         </th>
                         <th className="px-6 py-4 font-semibold text-sm text-left">
@@ -471,6 +494,17 @@ export default function PlayersTable() {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {player.qid}
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  player.isActive
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {player.isActive ? "Active" : "Inactive"}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {player.club?.name || "N/A"}
@@ -615,7 +649,8 @@ export default function PlayersTable() {
             </div>
           )}
         </div>
-      </div>      {showFilter && (
+      </div>{" "}
+      {showFilter && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white w-[90%] md:w-[600px] rounded-2xl p-6 relative shadow-xl">
             <button
@@ -651,6 +686,18 @@ export default function PlayersTable() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="text-gray-700 font-medium">Status</label>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl mt-2"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex justify-center mt-8">
@@ -668,7 +715,6 @@ export default function PlayersTable() {
           </div>
         </div>
       )}
-
       {/* Modal */}
       <CreatePlayerModal
         isOpen={isModalOpen}

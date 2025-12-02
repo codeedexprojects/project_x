@@ -1,4 +1,4 @@
-import { createTournament } from "@/redux/slice/tournamentSlice";
+import { createTournament, getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";

@@ -89,10 +89,18 @@ export const deleteUser = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await axios.delete(`${BASE_URL}/admin/user/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return { id, message: response.data?.message || "User deleted successfully" };
+      const response = await await axios.patch(
+        `${BASE_URL}/admin/user/block/${id}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return {
+        id,
+        message: response.data?.message || "User deleted successfully",
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to delete user"
@@ -108,7 +116,7 @@ const playersSlice = createSlice({
     singleUser: null,
     loading: false,
     error: null,
-    deleteLoading: false, 
+    deleteLoading: false,
     deleteError: null,
   },
   reducers: {},
@@ -184,7 +192,7 @@ const playersSlice = createSlice({
           state.singleUser = updatedUser;
         }
       })
-      .addCase(updateUser.rejected, (state, action) => { 
+      .addCase(updateUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
@@ -196,12 +204,12 @@ const playersSlice = createSlice({
       })
       .addCase(deleteUser.fulfilled, (state, action) => {
         state.deleteLoading = false;
-        
+
         // Remove the deleted user from the players array
         state.players = state.players.filter(
           (player) => player._id !== action.payload.id
         );
-        
+
         // If the deleted user is the current singleUser, clear it
         if (state.singleUser?._id === action.payload.id) {
           state.singleUser = null;
