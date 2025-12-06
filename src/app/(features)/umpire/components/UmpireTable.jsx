@@ -41,6 +41,7 @@ export default function UmpiresTable() {
         "Sl.no": index + 1,
         "Umpire Name": umpire?.name || "N/A",
         Gender: umpire?.gender || "N/A",
+        Level: umpire?.level || "N/A",
         Passport: umpire?.passport || "N/A",
         Country: umpire?.country || "N/A",
         "Mobile Number": umpire?.mobileNumber || "N/A",
@@ -68,34 +69,32 @@ export default function UmpiresTable() {
     try {
       const doc = new jsPDF();
 
-      // Add title
       doc.setFontSize(16);
-      doc.setTextColor(23, 5, 124); // Match your theme color
+      doc.setTextColor(23, 5, 124); 
       doc.text("Umpires Report", 14, 15);
 
-      // Add date
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
       doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
 
-      // Prepare data for PDF table
       const tableData = filteredUmpires.map((umpire, index) => [
         index + 1,
         umpire?.name || "N/A",
         umpire?.gender || "N/A",
+        umpire?.level || "N/A",
         umpire?.passport || "N/A",
         umpire?.country || "N/A",
         umpire?.mobileNumber || "N/A",
         umpire?.assignedTournamentsCount > 0 ? "Assigned" : "Not Assigned",
       ]);
 
-      // Add table to PDF
       autoTable(doc, {
         head: [
           [
             "Sl.no",
             "Umpire Name",
             "Gender",
+            "level",
             "Passport",
             "Country",
             "Mobile",
@@ -110,7 +109,7 @@ export default function UmpiresTable() {
           cellPadding: 3,
         },
         headStyles: {
-          fillColor: [23, 5, 124], // Your theme's blue color
+          fillColor: [23, 5, 124], 
           textColor: 255,
           fontStyle: "bold",
         },
@@ -120,7 +119,6 @@ export default function UmpiresTable() {
         margin: { left: 14, right: 14 },
       });
 
-      // Save PDF
       const fileName = `umpires_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
 
@@ -130,12 +128,12 @@ export default function UmpiresTable() {
       toast.error("Failed to export PDF file");
     }
   };
-  // Filter umpires
   const filteredUmpires =
     umpires?.filter((umpire) => {
       const matchesSearch =
         umpire.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         umpire.passport?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        umpire.QID?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         umpire.mobileNumber?.includes(searchTerm);
 
       const matchesGender =
@@ -146,7 +144,6 @@ export default function UmpiresTable() {
       return matchesSearch && matchesGender && matchesCountry;
     }) || [];
 
-  // Pagination
   const totalPages = Math.ceil(filteredUmpires.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -170,11 +167,10 @@ export default function UmpiresTable() {
             </p>
 
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              {/* LEFT — Search */}
               <div className="relative w-full md:w-[300px]">
                 <input
                   type="text"
-                  placeholder="Search Name, Passport, Contact"
+                  placeholder="Search Name, Passport, Contact, Qid"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full bg-white text-black px-4 py-3 rounded-xl pl-12 outline-none"
@@ -182,7 +178,6 @@ export default function UmpiresTable() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
               </div>
 
-              {/* RIGHT — Two Dropdown Filters */}
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <button
                   onClick={() => setIsModalOpen(true)}
@@ -198,7 +193,6 @@ export default function UmpiresTable() {
                   PDF
                 </button>
 
-                {/* Excel Export Button */}
                 <button
                   onClick={handleDownloadExcel}
                   className="border border-white text-white px-5 py-3 rounded-xl flex items-center gap-2 hover:bg-white hover:text-black transition-colors"
@@ -210,7 +204,6 @@ export default function UmpiresTable() {
             </div>
           </div>
 
-          {/* Table Section - Desktop */}
           <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
             {loading ? (
               <div className="px-6 py-12 text-center text-gray-500">
@@ -233,6 +226,9 @@ export default function UmpiresTable() {
                       <th className="px-6 py-4 font-semibold text-sm text-left">
                         Passport
                       </th>
+                       <th className="px-6 py-4 font-semibold text-sm text-left">
+                        QID
+                      </th>
                       <th className="px-6 py-4 font-semibold text-sm text-left">
                         Country
                       </th>
@@ -251,7 +247,7 @@ export default function UmpiresTable() {
                         <tr
                           key={umpire._id}
                           onClick={() => handleUmpireClick(umpire._id)}
-                          className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                          className="border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {startIndex + index + 1}
@@ -264,6 +260,9 @@ export default function UmpiresTable() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {umpire.passport}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            {umpire.QID}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900">
                             {umpire.country}
@@ -300,7 +299,6 @@ export default function UmpiresTable() {
             )}
           </div>
 
-          {/* Card View - Mobile */}
           <div className="md:hidden space-y-4">
             {loading ? (
               <div className="bg-white rounded-lg shadow-sm p-6 text-center text-gray-500">
@@ -378,7 +376,6 @@ export default function UmpiresTable() {
             )}
           </div>
 
-          {/* Results Count */}
           {!loading && (
             <div className="mt-4 text-gray-600 text-sm">
               Showing {startIndex + 1}-
@@ -387,7 +384,6 @@ export default function UmpiresTable() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && totalPages > 1 && (
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white px-4 py-3 rounded-lg shadow-sm">
               <button
@@ -443,7 +439,6 @@ export default function UmpiresTable() {
         </div>
       </div>
 
-      {/* Create Umpire Modal */}
       <CreateUmpireModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

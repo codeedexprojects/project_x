@@ -92,22 +92,26 @@ export const deleteTournament = createAsyncThunk(
   }
 );
 
-// edittournament
+
 export const editTournament = createAsyncThunk(
   "tournaments/editTournament",
-  async (id, { rejectWithValue }) => {
+  async ({ id, data }, { rejectWithValue }) => { 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await axios.patch(`${BASE_URL}/admin/tournament/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.patch(
+        `${BASE_URL}/admin/tournament/${id}`,
+        data, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data", 
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to edit tournament"
+        error.response?.data || error.response?.data?.message || "Failed to edit tournament"
       );
     }
   }

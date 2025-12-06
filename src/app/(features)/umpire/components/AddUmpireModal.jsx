@@ -13,6 +13,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
     country: '',
     passport: '',
     gender: '',
+    level: '',
     mobileNumber: '',
     email: '',
     QID: ''
@@ -43,6 +44,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
     if (!formData.country.trim()) errors.country = 'Country is required'
     if (!formData.passport.trim()) errors.passport = 'Passport number is required'
     if (!formData.gender) errors.gender = 'Gender is required'
+    if (!formData.level) errors.level = 'Level is required'
     if (!formData.mobileNumber.trim()) errors.mobileNumber = 'Mobile number is required'
     if (!formData.email.trim()) errors.email = 'Email is required'
     if (!formData.QID) errors.QID = 'QID is required'
@@ -88,6 +90,7 @@ function CreateUmpireModal({ isOpen, onClose }) {
       country: '',
       passport: '',
       gender: '',
+      level: '',
       mobileNumber: '',
       email: '',
       QID: ''
@@ -250,6 +253,23 @@ function CreateUmpireModal({ isOpen, onClose }) {
                     placeholder="Enter QID"
                   />
                   {formErrors.QID && <p className="text-red-500 text-sm mt-1">{formErrors.QID}</p>}
+                </div>
+
+                 <div>
+                  <label className="block text-sm font-medium mb-2">Level *</label>
+                  <select
+                    name="level"
+                    value={formData.level}
+                    onChange={handleInputChange}
+                    className={`w-full border rounded-lg px-4 py-3 text-black ${
+                      formErrors.level ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="umpire">Umpire</option>
+                    <option value="national_umpire">National Umpire</option>
+                    <option value="international_umpire">International Umpire</option>
+                  </select>
+                  {formErrors.level && <p className="text-red-500 text-sm mt-1">{formErrors.level}</p>}
                 </div>
               </div>
             </div>

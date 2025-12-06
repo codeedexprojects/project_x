@@ -4,7 +4,6 @@ import {
   Edit,
   Save,
   X,
-  Download,
   User,
   Calendar,
   MapPin,
@@ -14,7 +13,13 @@ import {
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "next/navigation";
-import { assignUmpireToTournament, deleteUmpire, getUmpireById, removeUmpireFromTournament, updateUmpire } from "@/redux/slice/umpireSlice";
+import {
+  assignUmpireToTournament,
+  deleteUmpire,
+  getUmpireById,
+  removeUmpireFromTournament,
+  updateUmpire,
+} from "@/redux/slice/umpireSlice";
 import toast from "react-hot-toast";
 import { getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
 
@@ -23,10 +28,7 @@ export default function UmpireDetails() {
   const dispatch = useDispatch();
   const [showTournamentModal, setShowTournamentModal] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState(null);
-
-  // get tournaments
   const { tournaments } = useSelector((state) => state.tournamentsSlice);
-
 
   const { currentUmpire, loading, updateLoading } = useSelector(
     (state) => state.umpires
@@ -37,8 +39,8 @@ export default function UmpireDetails() {
   const [localSaveLoading, setLocalSaveLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUnassignModal, setShowUnassignModal] = useState(false);
-  const [pendingUnassignTournamentId, setPendingUnassignTournamentId] = useState(null);
-
+  const [pendingUnassignTournamentId, setPendingUnassignTournamentId] =
+    useState(null);
 
   useEffect(() => {
     if (id) {
@@ -46,6 +48,14 @@ export default function UmpireDetails() {
     }
   }, [dispatch, id]);
 
+  const formatLevel = (level) => {
+    const levelMap = {
+      umpire: "Umpire",
+      national_umpire: "National Umpire",
+      international_umpire: "International Umpire",
+    };
+    return levelMap[level] || level;
+  };
   useEffect(() => {
     if (currentUmpire) {
       setFormData({
@@ -53,6 +63,7 @@ export default function UmpireDetails() {
         country: currentUmpire.country || "",
         passport: currentUmpire.passport || "",
         gender: currentUmpire.gender || "",
+        level: currentUmpire.level || "",
         mobileNumber: currentUmpire.mobileNumber || "",
         email: currentUmpire.email || "",
         QID: currentUmpire.QID || "",
@@ -66,13 +77,13 @@ export default function UmpireDetails() {
 
   const handleCancel = () => {
     setIsEditing(false);
-    // Reset form data to original values
     if (currentUmpire) {
       setFormData({
         name: currentUmpire.name || "",
         country: currentUmpire.country || "",
         passport: currentUmpire.passport || "",
         gender: currentUmpire.gender || "",
+        level: currentUmpire.level || "",
         mobileNumber: currentUmpire.mobileNumber || "",
         email: currentUmpire.email || "",
         QID: currentUmpire.QID || "",
@@ -84,28 +95,36 @@ export default function UmpireDetails() {
     setLocalSaveLoading(true);
 
     try {
-      // Validate required fields
-      const requiredFields = ['name', 'country', 'passport', 'gender', 'mobileNumber'];
-      const missingFields = requiredFields.filter(field => !formData[field]?.trim());
+      const requiredFields = [
+        "name",
+        "country",
+        "passport",
+        "gender",
+        "mobileNumber",
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !formData[field]?.trim()
+      );
 
       if (missingFields.length > 0) {
-        toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        toast.error(
+          `Please fill in all required fields: ${missingFields.join(", ")}`
+        );
         setLocalSaveLoading(false);
         return;
       }
 
       const result = await dispatch(updateUmpire({ id, data: formData }));
 
-      if (result.meta.requestStatus === 'fulfilled') {
+      if (result.meta.requestStatus === "fulfilled") {
         toast.success("Umpire updated successfully!");
         setIsEditing(false);
-        // Refresh the data
         dispatch(getUmpireById(id));
       } else {
         throw new Error(result.error?.message || "Failed to update umpire");
       }
     } catch (error) {
-      console.error('Update error:', error);
+      console.error("Update error:", error);
       toast.error(error?.message || "Failed to update umpire");
     } finally {
       setLocalSaveLoading(false);
@@ -128,13 +147,12 @@ export default function UmpireDetails() {
     if (result.meta.requestStatus === "fulfilled") {
       toast.success("Tournament assigned successfully!");
       setShowTournamentModal(false);
-      dispatch(getUmpireById(id)); // refresh page
+      dispatch(getUmpireById(id));
     } else {
       toast.error("Failed to assign tournament");
     }
   };
 
-  // UNASSIGN TOURNAMENT
   const handleUnassignClick = (tournamentId) => {
     setPendingUnassignTournamentId(tournamentId);
     setShowUnassignModal(true);
@@ -158,9 +176,6 @@ export default function UmpireDetails() {
     setShowUnassignModal(false);
   };
 
-
-
-  // DELETE UMPIRE
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
@@ -178,19 +193,12 @@ export default function UmpireDetails() {
     setShowDeleteModal(false);
   };
 
-
-
-
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
-
-  //   const handleExport = () => {
-  //     toast.success('Export feature coming soon!');
-  //   };
 
   const getStatusColor = (status) => {
     const colors = {
@@ -231,7 +239,6 @@ export default function UmpireDetails() {
     return colors[status] || "bg-gray-100 text-gray-700";
   };
 
-  // Editable fields configuration
   const editableFields = [
     {
       key: "name",
@@ -259,6 +266,13 @@ export default function UmpireDetails() {
       label: "Gender",
       type: "select",
       options: ["male", "female", "other"],
+      required: true,
+    },
+    {
+      key: "level",
+      label: "Level",
+      type: "select",
+      options: ["umpire", "national_umpire", "international_umpire"],
       required: true,
     },
     {
@@ -294,10 +308,11 @@ export default function UmpireDetails() {
           className="w-full text-sm text-gray-800 bg-white px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors"
           disabled={localSaveLoading}
         >
-          <option value="">Select {field.label}</option>
           {field.options.map((option) => (
             <option key={option} value={option}>
-              {option.charAt(0).toUpperCase() + option.slice(1)}
+              {field.key === "level"
+                ? formatLevel(option)
+                : option.charAt(0).toUpperCase() + option.slice(1)}
             </option>
           ))}
         </select>
@@ -313,8 +328,9 @@ export default function UmpireDetails() {
           type={field.type}
           value={formData[field.key] || ""}
           onChange={(e) => handleInputChange(field.key, e.target.value)}
-          className={`w-full text-sm text-gray-800 bg-white px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors ${IconComponent ? "pl-10" : ""
-            } ${localSaveLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full text-sm text-gray-800 bg-white px-3 py-2 rounded-lg border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors ${
+            IconComponent ? "pl-10" : ""
+          } ${localSaveLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           placeholder={`Enter ${field.label.toLowerCase()}`}
           min={field.type === "number" ? "0" : undefined}
           disabled={localSaveLoading}
@@ -323,7 +339,6 @@ export default function UmpireDetails() {
     );
   };
 
-  // Combined loading state
   const isSaving = localSaveLoading || updateLoading;
 
   if (loading) {
@@ -360,22 +375,21 @@ export default function UmpireDetails() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-100 rounded-lg">
               <User className="w-6 h-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-800">Umpire Profile</h1>
-              <p className="text-sm text-gray-500">Manage umpire information and tournament assignments</p>
+              <h1 className="text-xl font-semibold text-gray-800">
+                Umpire Profile
+              </h1>
+              <p className="text-sm text-gray-500">
+                Manage umpire information and tournament assignments
+              </p>
             </div>
           </div>
-
-          {/* ✅ Move Assign Button Here */}
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-
             <button
               onClick={() => {
                 dispatch(getTournamentsAdmin());
@@ -427,16 +441,13 @@ export default function UmpireDetails() {
             )}
             <button
               onClick={handleDeleteClick}
-
               className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition-colors"
             >
               Delete Umpire
             </button>
-
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Personal Information */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
               <div className="flex flex-col items-center gap-4 mb-6">
@@ -492,14 +503,14 @@ export default function UmpireDetails() {
                         renderEditableField(field)
                       ) : (
                         <div className="text-sm text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
-                          {currentUmpire[field.key] || "N/A"}
+                          {field.key === "level"
+                            ? formatLevel(currentUmpire[field.key])
+                            : currentUmpire[field.key] || "N/A"}
                         </div>
                       )}
                     </div>
                   );
                 })}
-
-                {/* Non-editable fields */}
                 <div>
                   <label className="text-xs text-gray-500 block mb-1 font-medium">
                     Umpire ID
@@ -521,9 +532,7 @@ export default function UmpireDetails() {
             </div>
           </div>
 
-          {/* Right Column - Tournament Assignments */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Statistics Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                 <div className="p-2 bg-blue-100 rounded-lg w-12 h-12 mx-auto mb-3 flex items-center justify-center">
@@ -545,91 +554,96 @@ export default function UmpireDetails() {
                 <p className="text-sm text-gray-500">Tournaments Assigned</p>
               </div>
             </div>
-
-            {/* Tournament Assignments */}
             {currentUmpire.assignedTournaments &&
-              currentUmpire.assignedTournaments.length > 0 ? (
-              currentUmpire.assignedTournaments.map((assignment, index) => (
-                <div
-                  key={assignment._id}
-                  className="bg-white rounded-xl shadow-sm overflow-hidden"
-                >
-                  <div className="bg-gradient-to-r from-indigo-50 to-white p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-100 rounded-lg">
-                        <Calendar className="w-5 h-5 text-indigo-600" />
+            currentUmpire.assignedTournaments.filter(
+              (assignment) => assignment.tournament
+            ).length > 0 ? (
+              currentUmpire.assignedTournaments
+                .filter((assignment) => assignment.tournament)
+                .map((assignment, index) => (
+                  <div
+                    key={assignment._id || index}
+                    className="bg-white rounded-xl shadow-sm overflow-hidden"
+                  >
+                    <div className="bg-gradient-to-r from-indigo-50 to-white p-4 sm:p-6 border-b border-gray-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 rounded-lg">
+                          <Calendar className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-800">
+                            {assignment.tournament?.name ||
+                              "Unnamed Tournament"}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {formatDate(assignment.tournament?.start_date)} -{" "}
+                            {formatDate(assignment.tournament?.end_date)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-800">
-                          {assignment.tournament.name}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(assignment.tournament.start_date)} -{" "}
-                          {formatDate(assignment.tournament.end_date)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span
-                        className={`${getRoleColor(
-                          assignment.role
-                        )} text-xs font-medium px-3 py-2 rounded-lg capitalize`}
-                      >
-                        {assignment.role.replace("_", " ")}
-                      </span>
-                      <span
-                        className={`${getTournamentStatusColor(
-                          assignment.tournament.status
-                        )} text-xs font-medium px-3 py-2 rounded-lg capitalize`}
-                      >
-                        {assignment.tournament.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-4 sm:p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Location:</span>
-                        <span className="text-gray-800 ml-2">
-                          {assignment.tournament.location}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Assigned Date:</span>
-                        <span className="text-gray-800 ml-2">
-                          {formatDate(assignment.assignedDate)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Categories:</span>
-                        <span className="text-gray-800 ml-2">
-                          {assignment.categories &&
-                            assignment.categories.length > 0
-                            ? assignment.categories.join(", ")
-                            : "All Categories"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Tournament ID:</span>
-                        <span className="text-gray-800 ml-2 font-mono">
-                          {assignment.tournament._id}
-                        </span>
-                      </div>
-                      <div className="mt-4 flex justify-end">
-                        <button
-                          onClick={() => handleUnassignClick(assignment.tournament._id)}
-
-                          className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+                      <div className="flex flex-wrap gap-2">
+                        <span
+                          className={`${getRoleColor(
+                            assignment.role
+                          )} text-xs font-medium px-3 py-2 rounded-lg capitalize`}
                         >
-                          Unassign
-                        </button>
+                          {assignment.role?.replace("_", " ") || "No role"}
+                        </span>
+                        <span
+                          className={`${getTournamentStatusColor(
+                            assignment.tournament?.status
+                          )} text-xs font-medium px-3 py-2 rounded-lg capitalize`}
+                        >
+                          {assignment.tournament?.status || "Unknown"}
+                        </span>
                       </div>
+                    </div>
 
+                    <div className="p-4 sm:p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Location:</span>
+                          <span className="text-gray-800 ml-2">
+                            {assignment.tournament?.location || "Unknown"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Assigned Date:</span>
+                          <span className="text-gray-800 ml-2">
+                            {formatDate(assignment.assignedDate)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Categories:</span>
+                          <span className="text-gray-800 ml-2">
+                            {assignment.categories &&
+                            assignment.categories.length > 0
+                              ? assignment.categories.join(", ")
+                              : "All Categories"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Tournament ID:</span>
+                          <span className="text-gray-800 ml-2 font-mono">
+                            {assignment.tournament?._id || "N/A"}
+                          </span>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          {assignment.tournament && (
+                            <button
+                              onClick={() =>
+                                handleUnassignClick(assignment.tournament._id)
+                              }
+                              className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+                            >
+                              Unassign
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))
             ) : (
               <div className="bg-white rounded-xl shadow-sm p-8 text-center">
                 <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -657,10 +671,11 @@ export default function UmpireDetails() {
                   <div
                     key={t._id}
                     onClick={() => setSelectedTournament(t._id)}
-                    className={`p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 ${selectedTournament === t._id
-                      ? "border-indigo-600 bg-indigo-100"
-                      : "border-gray-300"
-                      }`}
+                    className={`p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 ${
+                      selectedTournament === t._id
+                        ? "border-indigo-600 bg-indigo-100"
+                        : "border-gray-300"
+                    }`}
                   >
                     <h3 className="font-medium">{t.name}</h3>
                     <p className="text-xs text-gray-500">
@@ -695,7 +710,10 @@ export default function UmpireDetails() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg text-black">
             <h2 className="text-lg font-semibold mb-4">Delete Umpire</h2>
-            <p className="text-gray-600">Are you sure you want to delete this umpire? This action cannot be undone.</p>
+            <p className="text-gray-600">
+              Are you sure you want to delete this umpire? This action cannot be
+              undone.
+            </p>
 
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -719,7 +737,9 @@ export default function UmpireDetails() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg text-black">
             <h2 className="text-lg font-semibold mb-4">Unassign Tournament</h2>
-            <p className="text-gray-600">Are you sure you want to unassign this tournament from the umpire?</p>
+            <p className="text-gray-600">
+              Are you sure you want to unassign this tournament from the umpire?
+            </p>
 
             <div className="flex justify-end gap-3 mt-6">
               <button

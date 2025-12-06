@@ -201,9 +201,9 @@ export default function ClubsTable() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
               </div>
 
-              <select className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[160px]">
+              {/* <select className="bg-white px-4 py-3 rounded-xl text-black shadow-md cursor-pointer outline-none w-[160px]">
                 <option>All Locations</option>
-              </select>
+              </select> */}
             </div>
 
             <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">

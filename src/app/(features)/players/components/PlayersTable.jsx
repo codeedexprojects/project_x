@@ -1,13 +1,85 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Search, ChevronLeft, ChevronRight, Filter, File } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Filter, File, Trash2 } from "lucide-react";
 import CreatePlayerModal from "./AddPlayer";
 import { useDispatch, useSelector } from "react-redux";
-import { getPlayersAdmin } from "@/redux/slice/playersSlice";
+import { getPlayersAdmin ,deleteAllUsers  } from "@/redux/slice/playersSlice";
 import { useRouter } from "next/navigation";
 import { RiFileExcel2Line } from "react-icons/ri";
 import "jspdf-autotable";
+import toast from "react-hot-toast";
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, isLoading, confirmText, setConfirmText }) => {
+  if (!isOpen) return null;
 
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white w-[90%] md:w-[500px] rounded-2xl p-6 relative shadow-xl">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+          disabled={isLoading}
+        >
+          ✕
+        </button>
+        
+        <div className="mt-4">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Confirm Deactivation
+          </h3>
+          <p className="text-gray-600 mb-4">
+            This action will deactivate all active users and remove their tournament references. 
+            This action cannot be undone.
+          </p>
+          
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type <span className="font-bold">DEACTIVATE_ALL_USERS</span> to confirm:
+            </label>
+            <input
+              type="text"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DEACTIVATE_ALL_USERS"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              This is required to prevent accidental deactivation.
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={confirmText !== "DEACTIVATE_ALL_USERS" || isLoading}
+              className={`flex-1 px-4 py-3 rounded-lg text-white font-medium transition-colors ${
+                confirmText === "DEACTIVATE_ALL_USERS" && !isLoading
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-red-400 cursor-not-allowed"
+              }`}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Processing...
+                </div>
+              ) : (
+                "Deactivate All Users"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 export default function PlayersTable() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClub, setSelectedClub] = useState("All");
@@ -19,12 +91,59 @@ export default function PlayersTable() {
   const itemsPerPage = 10;
   const [showFilter, setShowFilter] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("All");
-  const statusOptions = ["All", "Active", "Inactive"];
+  // const [selectedStatus, setSelectedStatus] = useState("All");
+  // const statusOptions = ["All", "Active", "Inactive"];
+   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { players, loading, error } = useSelector((state) => state.playerSlice);
+  const { players, loading, error, deleteAllLoading } = useSelector((state) => state.playerSlice);
+
+
+   useEffect(() => {
+    if (deleteAllLoading === false && players.length > 0) {
+      // Check if there are any active users left
+      const activeUsersCount = players.filter(player => player.isActive === true).length;
+      
+      if (activeUsersCount === 0 && players.length > 0) {
+        
+      }
+    }
+  }, [players, deleteAllLoading]);
+
+
+    const handleDeleteAllUsers = async () => {
+    if (confirmText !== "DEACTIVATE_ALL_USERS") {
+      toast.error("Please type the confirmation text exactly as shown", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    try {
+      const result = await dispatch(deleteAllUsers(confirmText)).unwrap();
+      
+      toast.success(result.message || "Successfully deactivated all users!", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+      
+      // Close modal and reset
+      setShowDeleteAllModal(false);
+      setConfirmText("");
+      
+      // Refresh the players list
+      dispatch(getPlayersAdmin());
+      
+    } catch (error) {
+      toast.error(error || "Failed to deactivate users", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    }
+  };
 
   useEffect(() => {
     dispatch(getPlayersAdmin());
@@ -37,7 +156,7 @@ export default function PlayersTable() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedClub, selectedCountry, selectedStatus]);
+  }, [searchTerm, selectedClub, selectedCountry]);
 
   const handleDownloadPDF = async () => {
     setIsDownloadingPDF(true);
@@ -67,19 +186,12 @@ export default function PlayersTable() {
       );
 
       let filterInfo = "All Players";
-      if (
-        searchTerm ||
-        selectedClub !== "All" ||
-        selectedCountry !== "All" ||
-        selectedStatus !== "All"
-      ) {
+      if (searchTerm || selectedClub !== "All" || selectedCountry !== "All") {
         const filters = [];
         if (searchTerm) filters.push(`Search: ${searchTerm}`);
         if (selectedClub !== "All") filters.push(`Club: ${selectedClub}`);
         if (selectedCountry !== "All")
           filters.push(`Country: ${selectedCountry}`);
-        if (selectedStatus !== "All") filters.push(`Status: ${selectedStatus}`);
-        filterInfo = `Filters: ${filters.join(" | ")}`;
       }
 
       doc.text(filterInfo, 105, 35, { align: "center" });
@@ -238,12 +350,11 @@ export default function PlayersTable() {
       selectedClub === "All" || player.club?.name === selectedClub;
     const matchesCountry =
       selectedCountry === "All" || player.country === selectedCountry;
-    const matchesStatus =
-      selectedStatus === "All" ||
-      (selectedStatus === "Active" && player.isActive === true) ||
-      (selectedStatus === "Inactive" && player.isActive === false);
 
-    return matchesSearch && matchesClub && matchesCountry && matchesStatus;
+    // Only show active players
+    const isActive = player.isActive === true;
+
+    return matchesSearch && matchesClub && matchesCountry && isActive;
   });
 
   const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
@@ -254,6 +365,10 @@ export default function PlayersTable() {
   const handlePlayerClick = (playerId) => {
     router.push(`/players/${playerId}`);
   };
+
+
+    const activeUsersCount = players.filter(player => player.isActive === true).length;
+
   const handleDownloadExcel = async () => {
     setIsDownloading(true);
     try {
@@ -397,6 +512,20 @@ export default function PlayersTable() {
               </div>
 
               <div className="flex items-center gap-3 w-full md:w-auto md:ml-auto">
+                {activeUsersCount > 0 && (
+                  <button
+                    onClick={() => setShowDeleteAllModal(true)}
+                    disabled={deleteAllLoading}
+                    className="bg-red-600 px-6 py-3 rounded-xl text-white shadow-md font-medium flex items-center gap-2 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {deleteAllLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                    Deactivate All
+                  </button>
+                )}
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="bg-white px-6 py-3 rounded-xl text-black shadow-md font-medium flex items-center gap-2"
@@ -466,9 +595,7 @@ export default function PlayersTable() {
                         <th className="px-6 py-4 font-semibold text-sm text-left">
                           QID
                         </th>
-                        <th className="px-6 py-4 font-semibold text-sm text-left">
-                          Status
-                        </th>
+
                         <th className="px-6 py-4 font-semibold text-sm text-left">
                           Club
                         </th>
@@ -495,17 +622,7 @@ export default function PlayersTable() {
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {player.qid}
                             </td>
-                            <td className="px-6 py-4 text-sm">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  player.isActive
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {player.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </td>
+
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {player.club?.name || "N/A"}
                             </td>
@@ -686,7 +803,7 @@ export default function PlayersTable() {
                   ))}
                 </select>
               </div>
-              <div>
+              {/* <div>
                 <label className="text-gray-700 font-medium">Status</label>
                 <select
                   value={selectedStatus}
@@ -697,7 +814,7 @@ export default function PlayersTable() {
                     <option key={status}>{status}</option>
                   ))}
                 </select>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex justify-center mt-8">
@@ -715,6 +832,17 @@ export default function PlayersTable() {
           </div>
         </div>
       )}
+         <ConfirmationModal
+        isOpen={showDeleteAllModal}
+        onClose={() => {
+          setShowDeleteAllModal(false);
+          setConfirmText("");
+        }}
+        onConfirm={handleDeleteAllUsers}
+        isLoading={deleteAllLoading}
+        confirmText={confirmText}
+        setConfirmText={setConfirmText}
+      />
       {/* Modal */}
       <CreatePlayerModal
         isOpen={isModalOpen}

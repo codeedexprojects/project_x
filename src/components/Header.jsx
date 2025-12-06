@@ -14,15 +14,25 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Players", path: "/players" },
-    { name: "Tournaments", path: "/tournaments" },
-    { name: "Clubs", path: "/clubs" },
-    { name: "Ranking", path: "/rankings" },
-    { name: "Umpire", path: "/umpire" },
+    { name: "Home", path: "/", matchType: "exact" },
+    { name: "Players", path: "/players", matchType: "startsWith" },
+    { name: "Tournaments", path: "/tournaments", matchType: "startsWith" },
+    { name: "Clubs", path: "/clubs", matchType: "startsWith" },
+    { name: "Ranking", path: "/rankings", matchType: "startsWith" },
+    { name: "Umpire", path: "/umpire", matchType: "startsWith" },
   ];
 
-  const isActive = (p) => pathname === p;
+  const isActive = (path, matchType = "startsWith") => {
+    if (path === "/") {
+      return pathname === "/";
+    }
+    
+    if (matchType === "exact") {
+      return pathname === path;
+    }
+    
+    return pathname.startsWith(path);
+  };
 
   const goTo = (path) => {
     router.push(path);
@@ -35,7 +45,6 @@ export default function Header() {
     setIsMenuOpen(false);
   };
 
-  // Handle token expiration
   useEffect(() => {
     const handleTokenExpired = () => {
       dispatch(logoutAdmin());
@@ -60,15 +69,13 @@ export default function Header() {
           />
           <h1 className="text-white text-xl font-semibold">ShuttleDesk BQAB</h1>
         </div>
-
-        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2">
           {navLinks.map((link) => (
             <button
               key={link.name}
               onClick={() => goTo(link.path)}
               className={`relative px-5 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
-                isActive(link.path)
+                isActive(link.path, link.matchType)
                   ? "text-white relative after:absolute after:left-0 after:bottom-0 after:h-[1.5px] after:w-full after:bg-white before:absolute before:left-0 before:bottom-0 before:w-full before:h-full before:bg-[linear-gradient(0deg,rgba(23,5,124,0.8)_0%,rgba(16,16,16,0)_60%)] before:backdrop-blur-[4px] before:z-[-1]"
                   : "text-white hover:bg-white/10"
               }`}
@@ -77,9 +84,7 @@ export default function Header() {
             </button>
           ))}
 
-          {/* User info and logout */}
           <div className="flex items-center gap-3 ml-3 pl-3 border-l border-white/20">
-           
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 rounded-md text-white 
@@ -92,7 +97,6 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Menu Button */}
         <button
           className="md:hidden text-white p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -101,7 +105,6 @@ export default function Header() {
         </button>
       </nav>
 
-      {/* Mobile Navigation */}
       {isMenuOpen && (
         <div className="md:hidden bg-[#1a1a1a]/90 backdrop-blur-md border-t border-white/10 p-4 space-y-2">
           {navLinks.map((link) => (
@@ -110,7 +113,7 @@ export default function Header() {
               onClick={() => goTo(link.path)}
               className={`block w-full text-left px-4 py-2 rounded-md text-white
                 ${
-                  isActive(link.path)
+                  isActive(link.path, link.matchType)
                     ? "bg-[linear-gradient(180deg,rgba(16,16,16,0)_51.11%,rgba(23,5,124,0.8)_100%)] backdrop-blur-md"
                     : "hover:bg-white/10"
                 }
@@ -120,7 +123,6 @@ export default function Header() {
             </button>
           ))}
 
-          {/* User info and logout - Mobile */}
           <div className="pt-2 border-t border-white/20 space-y-2">
             <button
               onClick={handleLogout}

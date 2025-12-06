@@ -109,6 +109,28 @@ export const deleteUser = createAsyncThunk(
   }
 );
 
+// Add this to your existing async thunks in playersSlice.js
+export const deleteAllUsers = createAsyncThunk(
+  "adminAuth/deleteAllUsers",
+  async (confirm, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await axios.patch(
+        `${BASE_URL}/admin/user/delete-all`,
+        { confirm },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete all users"
+      );
+    }
+  }
+);
+
 const playersSlice = createSlice({
   name: "adminAuth",
   initialState: {
@@ -118,6 +140,8 @@ const playersSlice = createSlice({
     error: null,
     deleteLoading: false,
     deleteError: null,
+    deleteAllLoading: false,
+    deleteAllError: null,
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -218,6 +242,28 @@ const playersSlice = createSlice({
       .addCase(deleteUser.rejected, (state, action) => {
         state.deleteLoading = false;
         state.deleteError = action.payload;
+      });  builder
+      .addCase(deleteAllUsers.pending, (state) => {
+        state.deleteAllLoading = true;
+        state.deleteAllError = null;
+      })
+      .addCase(deleteAllUsers.fulfilled, (state, action) => {
+        state.deleteAllLoading = false;
+        
+        // Remove all active users from state
+        state.players = state.players.filter(player => !player.isActive);
+        
+        // Clear singleUser if it was active
+        if (state.singleUser?.isActive) {
+          state.singleUser = null;
+        }
+        
+        // Show toast message (you'll need to handle this in component)
+        state.successMessage = action.payload.message;
+      })
+      .addCase(deleteAllUsers.rejected, (state, action) => {
+        state.deleteAllLoading = false;
+        state.deleteAllError = action.payload;
       });
   },
 });

@@ -1,4 +1,7 @@
-import { createTournament, getTournamentsAdmin } from "@/redux/slice/tournamentSlice";
+import {
+  createTournament,
+  getTournamentsAdmin,
+} from "@/redux/slice/tournamentSlice";
 import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
@@ -29,7 +32,6 @@ function CreateTournamentModal({ isOpen, onClose }) {
       [name]: value,
     }));
 
-    // Clear error when user starts typing
     if (formErrors[name]) {
       setFormErrors((prev) => ({
         ...prev,
@@ -39,7 +41,9 @@ function CreateTournamentModal({ isOpen, onClose }) {
   };
 
   const validateFile = (file) => {
-    // Validate file type
+    // If no file, it's valid (file is optional now)
+    if (!file) return true;
+
     const validTypes = [".xlsx", ".xls", ".csv"];
     const fileExtension = file.name
       .toLowerCase()
@@ -54,7 +58,6 @@ function CreateTournamentModal({ isOpen, onClose }) {
       return false;
     }
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size should be less than 5MB");
       setFormErrors((prev) => ({
@@ -68,33 +71,39 @@ function CreateTournamentModal({ isOpen, onClose }) {
   };
 
   const handleFileSelect = (file) => {
-    if (file && validateFile(file)) {
+    if (file) {
+      if (validateFile(file)) {
+        setFormData((prev) => ({
+          ...prev,
+          file: file,
+        }));
+        setFileName(file.name);
+
+        // Clear file error
+        if (formErrors.file) {
+          setFormErrors((prev) => ({
+            ...prev,
+            file: "",
+          }));
+        }
+
+        toast.success("File selected successfully!");
+      }
+    } else {
+      // Handle case when removing file
       setFormData((prev) => ({
         ...prev,
-        file: file,
+        file: null,
       }));
-      setFileName(file.name);
-
-      // Clear file error
-      if (formErrors.file) {
-        setFormErrors((prev) => ({
-          ...prev,
-          file: "",
-        }));
-      }
-
-      toast.success("File selected successfully!");
+      setFileName("");
     }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      handleFileSelect(file);
-    }
+    handleFileSelect(file);
   };
 
-  // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -127,9 +136,7 @@ function CreateTournamentModal({ isOpen, onClose }) {
     if (!formData.location.trim()) errors.location = "Location is required";
     if (!formData.start_date) errors.start_date = "Start date is required";
     if (!formData.end_date) errors.end_date = "End date is required";
-    if (!formData.file) errors.file = "Excel file is required";
 
-    // Date validation
     if (formData.start_date && formData.end_date) {
       const startDate = new Date(formData.start_date);
       const endDate = new Date(formData.end_date);
@@ -139,59 +146,73 @@ function CreateTournamentModal({ isOpen, onClose }) {
       }
     }
 
+    // File validation is now optional, only validate if a file is provided
+    if (formData.file) {
+      if (!validateFile(formData.file)) {
+        errors.file = "Please upload a valid Excel file or remove it";
+      }
+    }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!validateForm()) {
-    toast.error("Please fill all required fields correctly");
-    return;
-  }
-
-  const loadingToast = toast.loading("Creating tournament...");
-
-  try {
-    const submitData = new FormData();
-    submitData.append("name", formData.name.trim());
-    submitData.append("location", formData.location.trim());
-    submitData.append("start_date", formData.start_date);
-    submitData.append("end_date", formData.end_date);
-
-    if (formData.file) {
-      submitData.append("file", formData.file);
+    if (!validateForm()) {
+      toast.error("Please fill all required fields correctly");
+      return;
     }
 
-    const result = await dispatch(createTournament(submitData)).unwrap();
+    const loadingToast = toast.loading("Creating tournament...");
 
-    toast.dismiss(loadingToast);
-    toast.success("Tournament created successfully!");
+    try {
+      const submitData = new FormData();
+      submitData.append("name", formData.name.trim());
+      submitData.append("location", formData.location.trim());
+      submitData.append("start_date", formData.start_date);
+      submitData.append("end_date", formData.end_date);
 
-    resetForm();
-    onClose();
-    
-    dispatch(getTournamentsAdmin());
-  } catch (error) {
-    console.error("Failed to create tournament:", error);
-    toast.dismiss(loadingToast);
-
-    if (
-      error?.message === "File already exists" &&
-      error?.errors?.length > 0
-    ) {
-      const fileError = error.errors.find((err) => err.field === "file");
-      if (fileError) {
-        toast.error(fileError.message);
-      } else {
-        toast.error(error.message || "File already exists");
+      // Only append file if it exists
+      if (formData.file) {
+        submitData.append("file", formData.file);
       }
-    } else {
-      toast.error(error || "Failed to create tournament");
+
+      const result = await dispatch(createTournament(submitData)).unwrap();
+
+      toast.dismiss(loadingToast);
+      toast.success("Tournament created successfully!");
+
+      resetForm();
+      onClose();
+
+      dispatch(getTournamentsAdmin());
+    } catch (error) {
+      console.error("Failed to create tournament:", error);
+      toast.dismiss(loadingToast);
+
+      if (error?.message === "File already exists" && error?.errors?.length > 0) {
+        const fileError = error.errors.find((err) => err.field === "file");
+        if (fileError) {
+          toast.error(fileError.message);
+        } else {
+          toast.error(error.message || "File already exists");
+        }
+      } else {
+        // Check if it's the "No file uploaded" error from backend
+        if (error?.message === "No file uploaded") {
+          toast.error("Tournament created successfully without player data!");
+          // Still consider it a success since we allow empty tournaments
+          resetForm();
+          onClose();
+          dispatch(getTournamentsAdmin());
+        } else {
+          toast.error(error?.message || "Failed to create tournament");
+        }
+      }
     }
-  }
-};
+  };
 
   const resetForm = () => {
     setFormData({
@@ -212,15 +233,7 @@ const handleSubmit = async (e) => {
   };
 
   const removeFile = () => {
-    setFormData((prev) => ({
-      ...prev,
-      file: null,
-    }));
-    setFileName("");
-    setFormErrors((prev) => ({
-      ...prev,
-      file: "",
-    }));
+    handleFileSelect(null);
     toast.success("File removed");
   };
 
@@ -229,7 +242,6 @@ const handleSubmit = async (e) => {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
         <div className="bg-gradient-to-r from-[#1e0066] to-[#3b2b91] px-8 py-6 text-white flex justify-between items-start">
           <div>
             <h2 className="text-3xl font-bold">Create New Tournament</h2>
@@ -254,17 +266,14 @@ const handleSubmit = async (e) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="overflow-y-auto flex-1 p-10 bg-white">
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-16">
-              {/* LEFT COLUMN */}
               <div>
                 <h3 className="text-xl font-semibold mb-6">
                   Basic Information
                 </h3>
 
-                {/* Tournament Name */}
                 <label className="block text-sm font-medium mb-2">
                   Tournament Name *
                 </label>
@@ -282,7 +291,6 @@ const handleSubmit = async (e) => {
                   <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
                 )}
 
-                {/* Location */}
                 <label className="block text-sm font-medium mt-6 mb-2">
                   Location *
                 </label>
@@ -303,13 +311,10 @@ const handleSubmit = async (e) => {
                 )}
               </div>
 
-              {/* RIGHT COLUMN */}
               <div>
                 <h3 className="text-xl font-semibold mb-6">Schedule & Data</h3>
 
-                {/* Dates */}
                 <div className="grid grid-cols-2 gap-6">
-                  {/* Start Date */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Start Date *
@@ -328,7 +333,6 @@ const handleSubmit = async (e) => {
                     />
                   </div>
 
-                  {/* End Date */}
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       End Date *
@@ -357,10 +361,9 @@ const handleSubmit = async (e) => {
                   <p className="text-red-500 text-sm">{formErrors.end_date}</p>
                 )}
 
-                {/* FILE UPLOAD */}
                 <div className="mt-6">
                   <label className="block text-sm font-medium mb-2">
-                    Tournament Data (Excel) *
+                    Tournament Data (Excel) <span className="text-gray-500 text-xs font-normal">- Optional</span>
                   </label>
 
                   {!fileName ? (
@@ -401,6 +404,8 @@ const handleSubmit = async (e) => {
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         Excel files only (.xlsx, .xls, .csv) — Max 5MB
+                        <br />
+                        <span className="text-green-600">Optional - You can add players later</span>
                       </p>
 
                       <input
@@ -438,7 +443,6 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end gap-4 mt-10 pt-6 border-t">
               <button
                 type="button"

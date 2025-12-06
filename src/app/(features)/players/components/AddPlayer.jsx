@@ -54,7 +54,6 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
 
     if (!formData.name.trim()) errors.name = "Player name is required";
     if (!formData.qid.trim()) errors.qid = "QID is required";
-    if (!formData.club) errors.club = "Club is required";
     if (!formData.country.trim()) errors.country = "Country is required";
     if (!formData.dob) errors.dob = "Date of birth is required";
     if (!formData.gender) errors.gender = "Gender is required";
@@ -226,7 +225,7 @@ export default function CreatePlayerModal({ isOpen, onClose }) {
                 {/* Club */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium mb-2 text-gray-700">
-                    Club *
+                    Club 
                   </label>
                   <select
                     name="club"

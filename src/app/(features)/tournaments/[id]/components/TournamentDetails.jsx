@@ -20,14 +20,15 @@ import {
   Medal,
   Star,
   Target,
-  Zap,
   Trash2,
-  AlertTriangle,
 } from "lucide-react";
 import {
   deleteTournament,
   getTournamentById,
 } from "@/redux/slice/tournamentSlice";
+import { Edit2 } from "lucide-react";
+import EditModal from "../../components/EditModal";
+import DeleteModal from "../../components/DeleteModal";
 
 export default function TournamentDetails() {
   const { id } = useParams();
@@ -40,6 +41,7 @@ export default function TournamentDetails() {
   const [expandedCategories, setExpandedCategories] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (id) dispatch(getTournamentById(id));
@@ -65,9 +67,13 @@ export default function TournamentDetails() {
 
     setIsDeleting(true);
     try {
-      await dispatch(deleteTournament(id));
-      // Redirect to tournaments list after successful deletion
-      router.push("/tournaments");
+      const result = await dispatch(deleteTournament(id));
+
+      if (deleteTournament.fulfilled.match(result)) {
+        router.push("/tournaments");
+      } else {
+        console.error("Failed to delete tournament");
+      }
     } catch (error) {
       console.error("Failed to delete tournament:", error);
     } finally {
@@ -212,7 +218,15 @@ export default function TournamentDetails() {
               </div>
 
               {/* Delete Button */}
-              <div className="lg:ml-6 mt-4 lg:mt-0">
+              <div className="lg:ml-6 mt-4 lg:mt-0 flex gap-3">
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <Edit2 size={20} />
+                  Edit Tournament
+                </button>
+
                 <button
                   onClick={handleDeleteClick}
                   disabled={isDeleting}
@@ -348,7 +362,9 @@ export default function TournamentDetails() {
                             {category.type}
                           </span>
                           <span className="text-gray-600 text-sm">
-                            {category.players?.length || 0} participants
+                            {category.type === "doubles"
+                              ? `${category.players?.length || 0} teams`
+                              : `${category.players?.length || 0} participants`}
                           </span>
                         </div>
                       </div>
@@ -540,80 +556,21 @@ export default function TournamentDetails() {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-auto transform transition-all">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <AlertTriangle className="text-red-600" size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Delete Tournament
-                </h3>
-              </div>
-            </div>
-
-            {/* Modal Body */}
-            <div className="px-6 py-4">
-              <p className="text-gray-600 mb-2">
-                Are you sure you want to delete the tournament:
-              </p>
-              <p className="text-lg font-semibold text-gray-900 mb-4 bg-gray-50 p-3 rounded-lg border">
-                "{singleTournament?.name}"
-              </p>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle
-                    className="text-red-500 mt-0.5 flex-shrink-0"
-                    size={18}
-                  />
-                  <div>
-                    <p className="text-red-800 font-medium text-sm">
-                      This action cannot be undone
-                    </p>
-                    <p className="text-red-600 text-sm mt-1">
-                      All tournament data, categories, and player records will
-                      be permanently deleted.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancelDelete}
-                  disabled={isDeleting}
-                  className="px-6 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting}
-                  className="px-6 py-2.5 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center gap-2"
-                >
-                  {isDeleting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Deleting...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 size={18} />
-                      Delete Tournament
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DeleteModal
+          isOpen={showDeleteModal}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          tournament={singleTournament}
+          isDeleting={isDeleting}
+        />
+      )}
+      {showEditModal && (
+        <EditModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          tournament={singleTournament}
+        />
       )}
     </>
   );
